@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <img
-                src="/manus-storage/miranda_logo_aa293412.png"
+                src="/logo.svg"
                 alt="Miranda Reviews"
                 className="w-8 h-8"
               />

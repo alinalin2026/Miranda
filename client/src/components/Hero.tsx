@@ -75,7 +75,7 @@ export default function Hero() {
           {/* Image container with subtle shadow */}
           <div className="relative rounded-2xl overflow-hidden shadow-2xl">
             <img
-              src="/manus-storage/miranda_hero_2_7f51747c.png"
+              src="/images/miranda-portrait.jpg"
               alt="Miranda - Professional Product Reviewer"
               className="w-full h-full object-cover"
             />

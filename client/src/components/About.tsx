@@ -14,7 +14,7 @@ export default function About() {
           {/* Left: Image */}
           <div className="relative">
             <img
-              src="/manus-storage/miranda_hero_1_5f9781bc.png"
+              src="/images/miranda-portrait.jpg"
               alt="Miranda Rodríguez"
               className="w-full rounded-2xl shadow-xl"
             />
