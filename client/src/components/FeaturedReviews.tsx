@@ -12,6 +12,17 @@ import { Link } from "wouter";
 
 const reviews = [
   {
+    id: 0,
+    slug: "vanotium-cutting-board",
+    title: "Vanotium Titanium Cutting Board",
+    category: "Kitchen & Hygiene",
+    rating: 9.8 / 2,
+    excerpt:
+      "After 60 days of daily cooking — raw chicken, fish, garlic, everything — this is the only board I'd recommend. Zero microplastics. Zero bacteria. Zero compromise.",
+    image: "bg-gradient-to-br from-violet-100 to-purple-100",
+    color: "text-violet-600",
+  },
+  {
     id: 1,
     slug: "luxury-skincare",
     title: "Luxury Skincare That Actually Works",
