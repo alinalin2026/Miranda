@@ -19,7 +19,7 @@ export default function Header() {
         <Link href="/">
           <a className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img
-              src="/logo.svg"
+              src="/images/logo-icon.png"
               alt="Miranda Reviews"
               className="w-10 h-10"
             />
