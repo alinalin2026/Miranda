@@ -31,21 +31,15 @@ export default function Header() {
 
         {/* Navigation */}
         <nav className="flex items-center gap-8">
-          <Link href="/#about">
-            <a className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">
-              About
-            </a>
-          </Link>
-          <Link href="/#reviews">
-            <a className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">
-              Reviews
-            </a>
-          </Link>
-          <Link href="/#contact">
-            <a className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">
-              Contact
-            </a>
-          </Link>
+          <a href="/#about" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">
+            About
+          </a>
+          <a href="/#reviews" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">
+            Reviews
+          </a>
+          <a href="/#contact" className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors">
+            Contact
+          </a>
         </nav>
       </div>
     </header>

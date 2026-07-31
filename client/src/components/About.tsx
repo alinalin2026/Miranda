@@ -10,19 +10,8 @@ export default function About() {
   return (
     <section id="about" className="py-20 md:py-32 bg-white">
       <div className="container">
-        <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Left: Image */}
-          <div className="relative">
-            <img
-              src="/images/miranda-portrait.jpg"
-              alt="Miranda Rodríguez"
-              className="w-full rounded-2xl shadow-xl"
-            />
-            {/* Decorative accent */}
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-          </div>
-
-          {/* Right: Content */}
+        <div className="max-w-3xl mx-auto">
+          {/* Content */}
           <div className="space-y-8">
             {/* Section header */}
             <div className="space-y-4">
