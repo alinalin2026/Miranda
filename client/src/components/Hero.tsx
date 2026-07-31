@@ -38,19 +38,23 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-white font-semibold transition-all duration-200 hover:shadow-lg"
-            >
-              Explore Reviews
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-2 border-primary text-primary hover:bg-primary/5 font-semibold"
-            >
-              Learn About Me
-            </Button>
+            <a href="/#reviews">
+              <Button
+                size="lg"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-semibold transition-all duration-200 hover:shadow-lg"
+              >
+                Explore Reviews
+              </Button>
+            </a>
+            <a href="/#about">
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full border-2 border-primary text-primary hover:bg-primary/5 font-semibold"
+              >
+                Learn About Me
+              </Button>
+            </a>
           </div>
 
           {/* Social proof */}

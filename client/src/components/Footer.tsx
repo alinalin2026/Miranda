@@ -28,22 +28,22 @@ export default function Footer() {
             <h4 className="font-semibold text-white">Quick Links</h4>
             <ul className="space-y-2 text-sm text-white/70">
               <li>
-                <a href="#about" className="hover:text-white transition-colors">
+                <a href="/#about" className="hover:text-white transition-colors">
                   About Me
                 </a>
               </li>
               <li>
-                <a href="#reviews" className="hover:text-white transition-colors">
+                <a href="/#reviews" className="hover:text-white transition-colors">
                   Reviews
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/#reviews" className="hover:text-white transition-colors">
                   Categories
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/#contact" className="hover:text-white transition-colors">
                   Contact
                 </a>
               </li>
@@ -55,22 +55,22 @@ export default function Footer() {
             <h4 className="font-semibold text-white">Categories</h4>
             <ul className="space-y-2 text-sm text-white/70">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/#reviews" className="hover:text-white transition-colors">
                   Beauty & Skincare
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/#reviews" className="hover:text-white transition-colors">
                   Home & Kitchen
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/#reviews" className="hover:text-white transition-colors">
                   Wellness
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/#reviews" className="hover:text-white transition-colors">
                   Technology
                 </a>
               </li>
@@ -82,22 +82,22 @@ export default function Footer() {
             <h4 className="font-semibold text-white">Connect</h4>
             <ul className="space-y-2 text-sm text-white/70">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
                   Instagram
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
                   YouTube
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
                   TikTok
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="mailto:hello@mirandareviews.com" className="hover:text-white transition-colors">
                   Email
                 </a>
               </li>

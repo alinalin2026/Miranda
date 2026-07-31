@@ -4,6 +4,7 @@ import About from "@/components/About";
 import Testimonials from "@/components/Testimonials";
 import FeaturedReviews from "@/components/FeaturedReviews";
 import Newsletter from "@/components/Newsletter";
+import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
 /**
@@ -23,6 +24,7 @@ export default function Home() {
         <Testimonials />
         <FeaturedReviews />
         <Newsletter />
+        <Contact />
       </main>
       <Footer />
     </div>
