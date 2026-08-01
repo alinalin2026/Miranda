@@ -154,13 +154,6 @@ export default function VanotiumReview() {
     <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
       <Header />
 
-      {/* Disclosure */}
-      <div className="bg-primary/10 border-l-4 border-primary px-6 py-3 text-sm text-foreground/70">
-        <div className="max-w-6xl mx-auto">
-          <strong className="text-foreground">Disclosure:</strong> This is a sponsored/affiliate review. I received the Vanotium board to test and may earn a commission on purchases through links on this page. All opinions are my own based on 60 days of real-world use.
-        </div>
-      </div>
-
       <main className="flex-1">
 
         {/* ── HERO ── */}
@@ -618,6 +611,11 @@ export default function VanotiumReview() {
           </a>
           <p className="mt-4 text-sm text-foreground/50">30-Day Money-Back Guarantee · Free Returns · Secure Checkout</p>
         </section>
+
+        {/* Disclosure */}
+        <p className="text-center text-xs text-foreground/40 px-6 pb-10 max-w-2xl mx-auto">
+          <strong className="text-foreground/50">Disclosure:</strong> This is a sponsored/affiliate review. I received the Vanotium board to test and may earn a commission on purchases through links on this page. All opinions are my own based on 60 days of real-world use.
+        </p>
 
       </main>
 
