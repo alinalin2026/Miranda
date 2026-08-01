@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/NotFound";
 import ProductReview from "@/pages/ProductReview";
 import VanotiumReview from "@/pages/VanotiumReview";
@@ -15,6 +16,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/review/vanotium-cutting-board"} component={VanotiumReview} />
       <Route path={"/review/:productId"} component={ProductReview} />
+      <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
