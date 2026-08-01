@@ -11,13 +11,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Link } from "wouter";
 
-// Routed through /review/vanotium-cutting-board/go/<slug> (tracked in Redis,
-// see middleware.ts) rather than linking the affiliate URL directly, so
-// clicks are counted and the destination can change without a client
-// rebuild. "onsite" identifies traffic from these on-page buttons, as
-// opposed to a promoter-specific slug handed out separately (e.g.
-// /review/vanotium-cutting-board/go/affiliateno1).
-const SHOP_URL = "/review/vanotium-cutting-board/go/onsite";
+// Routed through /review/vanotium-cutting-board/buy (handled in
+// middleware.ts) rather than linking the affiliate URL directly. That
+// endpoint reads back whichever promoter slug brought this visitor in
+// (via a cookie set by /go/<slug>, falling back to "onsite" for direct
+// traffic) and forwards to MaxBounty with that slug as &subid=, so
+// MaxBounty's own reporting matches our dashboard.
+const SHOP_URL = "/review/vanotium-cutting-board/buy";
 
 const comparisonRows = [
   {
