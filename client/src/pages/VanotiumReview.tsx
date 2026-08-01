@@ -151,7 +151,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function VanotiumReview() {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
       <Header />
 
       {/* Disclosure */}
@@ -205,13 +205,13 @@ export default function VanotiumReview() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <a href={SHOP_URL} target="_blank" rel="nofollow sponsored">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-semibold hover:shadow-lg transition-all">
+                <a href={SHOP_URL} target="_blank" rel="nofollow sponsored" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold text-lg px-8 py-7 shadow-lg hover:shadow-xl transition-all">
                     Shop Vanotium — Up to 70% Off
                   </Button>
                 </a>
-                <a href="#test">
-                  <Button variant="outline" size="lg" className="border-2 border-primary text-primary hover:bg-primary/5 font-semibold">
+                <a href="#test" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 border-primary text-primary hover:bg-primary/5 font-bold text-lg px-8 py-7">
                     See My Results
                   </Button>
                 </a>
@@ -611,8 +611,8 @@ export default function VanotiumReview() {
           <p className="text-lg text-foreground/70 max-w-xl mx-auto mb-8 leading-relaxed">
             After 60 days of real-world testing, the Vanotium Titanium Cutting Board is the only board I'd recommend to anyone who cares about what goes into their food. No microplastics. No bacteria. No compromise.
           </p>
-          <a href={SHOP_URL} target="_blank" rel="nofollow sponsored">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-semibold text-base px-10 py-6 hover:shadow-lg transition-all">
+          <a href={SHOP_URL} target="_blank" rel="nofollow sponsored" className="inline-block w-full sm:w-auto">
+            <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold text-xl px-12 py-8 shadow-lg hover:shadow-xl transition-all">
               Shop Vanotium — Up to 70% Off Today
             </Button>
           </a>
@@ -620,6 +620,15 @@ export default function VanotiumReview() {
         </section>
 
       </main>
+
+      {/* ── STICKY MOBILE CTA ── */}
+      <div className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-white border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.1)] px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <a href={SHOP_URL} target="_blank" rel="nofollow sponsored" className="block">
+          <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-base py-6 shadow-lg">
+            Buy Now — 70% Off
+          </Button>
+        </a>
+      </div>
 
       <Footer />
     </div>
