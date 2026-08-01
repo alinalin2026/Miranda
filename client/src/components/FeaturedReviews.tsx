@@ -19,51 +19,18 @@ const reviews = [
     rating: 9.8 / 2,
     excerpt:
       "After 60 days of daily cooking — raw chicken, fish, garlic, everything — this is the only board I'd recommend. Zero microplastics. Zero bacteria. Zero compromise.",
-    image: "bg-gradient-to-br from-violet-100 to-purple-100",
+    image: "/images/vanotium/hero_main.jpg",
     color: "text-violet-600",
   },
   {
     id: 1,
-    slug: "luxury-skincare",
-    title: "Luxury Skincare That Actually Works",
-    category: "Beauty & Skincare",
-    rating: 5,
-    excerpt:
-      "After testing this serum for 8 weeks, I'm genuinely impressed. The results are visible, and it doesn't irritate my sensitive skin.",
-    image: "bg-gradient-to-br from-rose-100 to-pink-100",
-    color: "text-rose-600",
-  },
-  {
-    id: 2,
-    slug: "coffee-maker",
-    title: "The Best Coffee Maker for Home Baristas",
-    category: "Kitchen & Appliances",
-    rating: 4.5,
-    excerpt:
-      "Consistent espresso shots, intuitive controls, and beautiful design. This machine has elevated my morning routine.",
-    image: "bg-gradient-to-br from-amber-100 to-orange-100",
-    color: "text-amber-600",
-  },
-  {
-    id: 3,
-    slug: "premium-bedding",
-    title: "Premium Bedding That Changed My Sleep",
-    category: "Home & Wellness",
-    rating: 5,
-    excerpt:
-      "Silk pillowcases, Egyptian cotton sheets—the investment paid off. I'm sleeping better and my skin thanks me.",
-    image: "bg-gradient-to-br from-blue-100 to-cyan-100",
-    color: "text-blue-600",
-  },
-  {
-    id: 4,
     slug: "mellaramax-pillow",
     title: "MellaraMax Butterfly Ergonomic Pillow",
     category: "Sleep & Wellness",
     rating: 9.7 / 2,
     excerpt:
       "After 30 nights sleeping on this butterfly-contour pillow, my chronic morning neck stiffness is gone. No more tossing. No more waking up exhausted.",
-    image: "bg-gradient-to-br from-indigo-100 to-violet-100",
+    image: "/images/mellaramax/hero_main.jpg",
     color: "text-indigo-600",
   },
 ];
@@ -86,14 +53,19 @@ export default function FeaturedReviews() {
         </div>
 
         {/* Review cards grid */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
+        <div className="grid sm:grid-cols-2 gap-8 mb-12 max-w-3xl mx-auto">
           {reviews.map((review) => (
             <div
               key={review.id}
               className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
-              {/* Image placeholder */}
-              <div className={`h-48 ${review.image} relative overflow-hidden`}>
+              {/* Thumbnail */}
+              <div className="h-48 relative overflow-hidden">
+                <img
+                  src={review.image}
+                  alt={review.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
 
