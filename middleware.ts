@@ -1,5 +1,6 @@
 import { getRedis } from "./api/_lib/redis";
 import { destinations } from "./api/_lib/destinations";
+import { keys } from "./api/_lib/keys";
 
 // Edge Middleware runs before static files, functions, and vercel.json
 // rewrites are even considered, so /go/:slug is guaranteed to be intercepted
@@ -19,11 +20,11 @@ async function middleware(request: Request) {
     const entry = JSON.stringify({ ts: Date.now(), slug, country, referrer });
 
     await Promise.all([
-      redis.incr(`go:hits:${slug}`),
-      redis.incr("go:hits:total"),
-      redis.sadd("go:slugs", slug),
-      redis.lpush("go:log", entry),
-      redis.ltrim("go:log", 0, 499),
+      redis.incr(keys.hits(slug)),
+      redis.incr(keys.hitsTotal),
+      redis.sadd(keys.slugs, slug),
+      redis.lpush(keys.log, entry),
+      redis.ltrim(keys.log, 0, 499),
     ]);
   } catch (err) {
     // Don't block the redirect if Redis isn't reachable/configured - a

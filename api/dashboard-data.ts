@@ -1,4 +1,5 @@
 import { getRedis } from "./_lib/redis";
+import { keys } from "./_lib/keys";
 
 export const config = { runtime: "edge" };
 
@@ -34,17 +35,17 @@ export default async function handler(request: Request) {
 
   try {
     const redis = getRedis();
-    const slugs = ((await redis.smembers("go:slugs")) as string[]) || [];
+    const slugs = ((await redis.smembers(keys.slugs)) as string[]) || [];
 
     const rows = await Promise.all(
       slugs.map(async (slug) => {
-        const hits = await redis.get<number>(`go:hits:${slug}`);
+        const hits = await redis.get<number>(keys.hits(slug));
         return { slug, hits: hits ?? 0 };
       }),
     );
     rows.sort((a, b) => b.hits - a.hits);
 
-    const [totalHits, rawLog] = await Promise.all([redis.get<number>("go:hits:total"), redis.lrange("go:log", 0, 49)]);
+    const [totalHits, rawLog] = await Promise.all([redis.get<number>(keys.hitsTotal), redis.lrange(keys.log, 0, 49)]);
 
     const recent = (rawLog as unknown[]).map(parseLogEntry).filter((entry): entry is LogEntry => entry !== null);
 
