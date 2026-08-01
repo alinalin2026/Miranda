@@ -11,7 +11,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Link } from "wouter";
 
-const SHOP_URL = "https://shop.vanotium.com/";
+// Routed through /go/vanotium (tracked in Redis, see middleware.ts) rather
+// than linking the affiliate URL directly, so clicks are counted and the
+// destination can change without a client rebuild.
+const SHOP_URL = "/go/vanotium";
 
 const comparisonRows = [
   {
