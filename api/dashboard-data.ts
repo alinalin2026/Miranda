@@ -9,6 +9,7 @@ interface LogEntry {
   slug: string;
   country: string;
   referrer: string;
+  userAgent?: string;
 }
 
 interface SlugRow {

@@ -2,6 +2,7 @@ import { getRedis } from "./api/_lib/redis";
 import { destinations } from "./api/_lib/destinations";
 import { keys } from "./api/_lib/keys";
 import { getCookie } from "./api/_lib/cookies";
+import { isLikelyBot } from "./api/_lib/bots";
 
 // Edge Middleware runs before static files, functions, and vercel.json
 // rewrites are even considered, so both paths below are guaranteed to be
@@ -28,13 +29,33 @@ export const config = {
 
 const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
+const DEDUP_WINDOW_SECONDS = 10;
+
 async function trackClick(product: string, slug: string, request: Request) {
   const country = request.headers.get("x-vercel-ip-country") || "XX";
   const referrer = request.headers.get("referer") || "";
+  const userAgent = request.headers.get("user-agent") || "";
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+
+  // Known bots/crawlers/link-preview fetchers hit this URL over plain HTTP
+  // without ever running JS, so they'd never show up in an analytics tool
+  // that relies on client-side JS -- but they would inflate this count
+  // unless filtered out here. Still redirect them below; just don't count
+  // or log the hit.
+  if (isLikelyBot(userAgent)) return;
 
   try {
     const redis = getRedis();
-    const entry = JSON.stringify({ ts: Date.now(), product, slug, country, referrer });
+
+    // Second line of defense against a script that spoofs a normal-looking
+    // User-Agent: collapse repeat hits from the same (product, slug, ip)
+    // within a short window down to a single count. SET NX only succeeds
+    // the first time; a real person re-clicking within 10s of their own
+    // last click is not a meaningfully different "click" anyway.
+    const firstInWindow = await redis.set(keys.dedup(product, slug, ip), 1, { nx: true, ex: DEDUP_WINDOW_SECONDS });
+    if (!firstInWindow) return;
+
+    const entry = JSON.stringify({ ts: Date.now(), product, slug, country, referrer, userAgent });
 
     await Promise.all([
       redis.incr(keys.hits(product, slug)),

@@ -18,4 +18,8 @@ export const keys = {
   slugsFor: (product: string) => `${NS}:slugs:${product}`,
   // Capped recent-activity log shared across all products.
   log: `${NS}:log`,
+  // Short-lived dedup marker per (product, slug, ip) -- caps rapid repeat
+  // hits (script loops, retries, prefetching) from inflating the count
+  // even when the User-Agent looks like a normal browser.
+  dedup: (product: string, slug: string, ip: string) => `${NS}:dedup:${product}:${slug}:${ip}`,
 };
