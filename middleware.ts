@@ -1,5 +1,5 @@
 import { getRedis } from "./api/_lib/redis";
-import { destinations } from "./api/_lib/destinations";
+import { destinations, destinationOverridesByCountry } from "./api/_lib/destinations";
 import { keys } from "./api/_lib/keys";
 import { getCookie } from "./api/_lib/cookies";
 import { isLikelyBot } from "./api/_lib/bots";
@@ -22,7 +22,10 @@ import { isLikelyBot } from "./api/_lib/bots";
 //    the visitor arrived directly, with no cookie), and redirects to the
 //    product's real destination URL with that slug appended as MaxBounty's
 //    &subid= parameter, so MaxBounty's own reporting can attribute the
-//    click to the same promoter our dashboard shows.
+//    click to the same promoter our dashboard shows. The destination itself
+//    can vary by visitor country -- see destinationOverridesByCountry in
+//    api/_lib/destinations.ts (e.g. US traffic on the cutting board gets a
+//    separate US-specific offer link).
 //
 // Standalone shortcuts, not tied to any review page -- each redirects
 // straight to a product's destination (no landing page in between),
@@ -91,6 +94,10 @@ function appendSubid(destinationUrl: string, slug: string): string {
   return `${destinationUrl}${separator}subid=${encodeURIComponent(slug)}`;
 }
 
+function resolveDestination(product: string, country: string): string | undefined {
+  return destinationOverridesByCountry[product]?.[country] ?? destinations[product];
+}
+
 async function middleware(request: Request) {
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean);
@@ -100,7 +107,8 @@ async function middleware(request: Request) {
     const slug = segments[0];
     await trackClick(shortcutProduct, slug, request);
 
-    const destinationUrl = destinations[shortcutProduct];
+    const country = request.headers.get("x-vercel-ip-country") || "XX";
+    const destinationUrl = resolveDestination(shortcutProduct, country);
     const destination = destinationUrl ? appendSubid(destinationUrl, slug) : new URL("/", url.origin).toString();
 
     return new Response(null, {
@@ -133,7 +141,8 @@ async function middleware(request: Request) {
 
   // ["review", "<product>", "buy"]
   const slug = getCookie(request, refCookieName) || "onsite";
-  const destinationUrl = destinations[product];
+  const country = request.headers.get("x-vercel-ip-country") || "XX";
+  const destinationUrl = resolveDestination(product, country);
   const destination = destinationUrl ? appendSubid(destinationUrl, slug) : new URL("/", url.origin).toString();
 
   return new Response(null, {
