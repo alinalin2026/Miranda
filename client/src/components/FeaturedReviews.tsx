@@ -55,6 +55,17 @@ const reviews = [
     image: "bg-gradient-to-br from-blue-100 to-cyan-100",
     color: "text-blue-600",
   },
+  {
+    id: 4,
+    slug: "mellaramax-pillow",
+    title: "MellaraMax Butterfly Ergonomic Pillow",
+    category: "Sleep & Wellness",
+    rating: 9.7 / 2,
+    excerpt:
+      "After 30 nights sleeping on this butterfly-contour pillow, my chronic morning neck stiffness is gone. No more tossing. No more waking up exhausted.",
+    image: "bg-gradient-to-br from-indigo-100 to-violet-100",
+    color: "text-indigo-600",
+  },
 ];
 
 export default function FeaturedReviews() {
