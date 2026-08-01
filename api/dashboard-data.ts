@@ -5,9 +5,21 @@ export const config = { runtime: "edge" };
 
 interface LogEntry {
   ts: number;
+  product: string;
   slug: string;
   country: string;
   referrer: string;
+}
+
+interface SlugRow {
+  slug: string;
+  hits: number;
+}
+
+interface ProductRow {
+  product: string;
+  total: number;
+  slugs: SlugRow[];
 }
 
 function parseLogEntry(raw: unknown): LogEntry | null {
@@ -35,21 +47,33 @@ export default async function handler(request: Request) {
 
   try {
     const redis = getRedis();
-    const slugs = ((await redis.smembers(keys.slugs)) as string[]) || [];
+    const products = ((await redis.smembers(keys.products)) as string[]) || [];
 
-    const rows = await Promise.all(
-      slugs.map(async (slug) => {
-        const hits = await redis.get<number>(keys.hits(slug));
-        return { slug, hits: hits ?? 0 };
+    const productRows: ProductRow[] = await Promise.all(
+      products.map(async (product) => {
+        const [total, slugList] = await Promise.all([
+          redis.get<number>(keys.productTotal(product)),
+          redis.smembers(keys.slugsFor(product)) as Promise<string[]>,
+        ]);
+
+        const slugs = await Promise.all(
+          (slugList || []).map(async (slug) => {
+            const hits = await redis.get<number>(keys.hits(product, slug));
+            return { slug, hits: hits ?? 0 };
+          }),
+        );
+        slugs.sort((a, b) => b.hits - a.hits);
+
+        return { product, total: total ?? 0, slugs };
       }),
     );
-    rows.sort((a, b) => b.hits - a.hits);
+    productRows.sort((a, b) => b.total - a.total);
 
-    const [totalHits, rawLog] = await Promise.all([redis.get<number>(keys.hitsTotal), redis.lrange(keys.log, 0, 49)]);
+    const [totalHits, rawLog] = await Promise.all([redis.get<number>(keys.grandTotal), redis.lrange(keys.log, 0, 49)]);
 
     const recent = (rawLog as unknown[]).map(parseLogEntry).filter((entry): entry is LogEntry => entry !== null);
 
-    return new Response(JSON.stringify({ totalHits: totalHits ?? 0, rows, recent }), {
+    return new Response(JSON.stringify({ totalHits: totalHits ?? 0, products: productRows, recent }), {
       headers: { "content-type": "application/json", "cache-control": "no-store" },
     });
   } catch (err) {

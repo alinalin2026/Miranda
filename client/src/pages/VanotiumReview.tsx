@@ -11,10 +11,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Link } from "wouter";
 
-// Routed through /go/vanotium (tracked in Redis, see middleware.ts) rather
-// than linking the affiliate URL directly, so clicks are counted and the
-// destination can change without a client rebuild.
-const SHOP_URL = "/go/vanotium";
+// Routed through /review/vanotium-cutting-board/go/<slug> (tracked in Redis,
+// see middleware.ts) rather than linking the affiliate URL directly, so
+// clicks are counted and the destination can change without a client
+// rebuild. "onsite" identifies traffic from these on-page buttons, as
+// opposed to a promoter-specific slug handed out separately (e.g.
+// /review/vanotium-cutting-board/go/affiliateno1).
+const SHOP_URL = "/review/vanotium-cutting-board/go/onsite";
 
 const comparisonRows = [
   {
