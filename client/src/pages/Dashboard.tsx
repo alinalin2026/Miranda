@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ChevronDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, ChevronDown, RefreshCw, X } from "lucide-react";
 
 interface SlugRow {
   slug: string;
@@ -32,20 +32,40 @@ interface DashboardData {
 const STORAGE_KEY = "mr_admin_pw";
 const REFRESH_MS = 10000;
 
-function ProductCard({ row }: { row: ProductRow }) {
+function ProductCard({
+  row,
+  onResetSlug,
+  onResetProduct,
+}: {
+  row: ProductRow;
+  onResetSlug: (product: string, slug: string) => void;
+  onResetProduct: (product: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border-t border-gray-100 first:border-t-0">
-      <button
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-        onClick={() => setOpen(!open)}
-      >
-        <span className="font-medium text-gray-900">/review/{row.product}/go/*</span>
+      <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+        <button className="flex-1 text-left" onClick={() => setOpen(!open)}>
+          <span className="font-medium text-gray-900">/review/{row.product}/go/*</span>
+        </button>
         <div className="flex items-center gap-3">
           <span className="text-gray-700 font-semibold">{row.total}</span>
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+          <button
+            title="Reset all clicks for this product"
+            onClick={() => {
+              if (confirm(`Reset all ${row.total} clicks for ${row.product}? This can't be undone.`)) {
+                onResetProduct(row.product);
+              }
+            }}
+            className="text-xs text-red-500 hover:text-red-700 font-medium"
+          >
+            Reset
+          </button>
+          <button onClick={() => setOpen(!open)}>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
         </div>
-      </button>
+      </div>
       {open && (
         <div className="px-4 pb-3">
           <table className="w-full text-sm">
@@ -53,6 +73,7 @@ function ProductCard({ row }: { row: ProductRow }) {
               <tr>
                 <th className="py-1.5">Promoter slug</th>
                 <th className="py-1.5">Clicks</th>
+                <th className="py-1.5" />
               </tr>
             </thead>
             <tbody>
@@ -61,11 +82,24 @@ function ProductCard({ row }: { row: ProductRow }) {
                   <tr key={s.slug} className="border-t border-gray-100">
                     <td className="py-1.5 text-gray-900">{s.slug}</td>
                     <td className="py-1.5">{s.hits}</td>
+                    <td className="py-1.5 text-right">
+                      <button
+                        title={`Reset clicks for ${s.slug}`}
+                        onClick={() => {
+                          if (confirm(`Reset ${s.hits} clicks for ${row.product}/${s.slug}? This can't be undone.`)) {
+                            onResetSlug(row.product, s.slug);
+                          }
+                        }}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={2} className="py-3 text-gray-400">
+                  <td colSpan={3} className="py-3 text-gray-400">
                     No clicks yet
                   </td>
                 </tr>
@@ -113,6 +147,26 @@ export default function Dashboard() {
       setLoading(false);
     }
   }, []);
+
+  const resetClicks = useCallback(
+    async (product: string, slug?: string) => {
+      try {
+        const res = await fetch("/api/dashboard-reset", {
+          method: "POST",
+          headers: { "x-admin-password": password, "content-type": "application/json" },
+          body: JSON.stringify({ product, slug }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error || `Reset failed (${res.status})`);
+        }
+        await fetchData(password);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to reset");
+      }
+    },
+    [password, fetchData],
+  );
 
   useEffect(() => {
     if (password) fetchData(password);
@@ -184,12 +238,21 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-8">
           <div className="px-4 py-3 border-b border-gray-100">
             <h2 className="font-bold text-gray-900">By Product — click to see promoter breakdown</h2>
           </div>
           {data?.products.length ? (
-            data.products.map((row) => <ProductCard key={row.product} row={row} />)
+            data.products.map((row) => (
+              <ProductCard
+                key={row.product}
+                row={row}
+                onResetSlug={(product, slug) => resetClicks(product, slug)}
+                onResetProduct={(product) => resetClicks(product)}
+              />
+            ))
           ) : (
             <p className="px-4 py-8 text-center text-gray-400">No clicks yet</p>
           )}
