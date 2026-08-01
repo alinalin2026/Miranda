@@ -604,8 +604,10 @@ export default function VanotiumReview() {
           <p className="text-lg text-foreground/70 max-w-xl mx-auto mb-8 leading-relaxed">
             After 60 days of real-world testing, the Vanotium Titanium Cutting Board is the only board I'd recommend to anyone who cares about what goes into their food. No microplastics. No bacteria. No compromise.
           </p>
-          <a href={SHOP_URL} target="_blank" rel="nofollow sponsored" className="inline-block w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold text-xl px-12 py-8 shadow-lg hover:shadow-xl transition-all">
+          {/* Hidden on mobile: the sticky "Buy Now" bar already covers this action there,
+              and this button's long label doesn't fit at this size on narrow screens. */}
+          <a href={SHOP_URL} target="_blank" rel="nofollow sponsored" className="hidden md:inline-block">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold text-xl px-12 py-8 shadow-lg hover:shadow-xl transition-all">
               Shop Vanotium — Up to 70% Off Today
             </Button>
           </a>
