@@ -11,7 +11,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Link } from "wouter";
 
-const SHOP_URL = "https://shop.vanotium.com/";
+const SHOP_URL =
+  "https://afflat3d2.com/trk/lnk/8613E3A5-B445-46B2-BA81-CD563CDBA746/?o=32482&c=918277&a=798445&k=3E4BD68C2D6D53166E9E824DFEE5E678&l=38251";
 
 const comparisonRows = [
   {
