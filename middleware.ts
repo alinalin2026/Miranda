@@ -24,17 +24,21 @@ import { isLikelyBot } from "./api/_lib/bots";
 //    &subid= parameter, so MaxBounty's own reporting can attribute the
 //    click to the same promoter our dashboard shows.
 //
-// A standalone shortcut, not tied to any review page:
+// Standalone shortcuts, not tied to any review page -- each redirects
+// straight to a product's destination (no landing page in between),
+// tracked under a slug matching its own path name (e.g. &subid=order),
+// same as the two-step flow above.
 //
-// 3. /order -- redirects straight to the Vanotium cutting board's
-//    destination (no landing page in between), tracked under its own
-//    "order" slug with &subid=order, same as the two-step flow above.
+// 3. /order -- Vanotium cutting board
+// 4. /shop  -- MellaraMax pillow
 export const config = {
-  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order"],
+  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order", "/shop"],
 };
 
-const ORDER_SHORTCUT_PRODUCT = "vanotium-cutting-board";
-const ORDER_SHORTCUT_SLUG = "order";
+const SHORTCUTS: Record<string, string> = {
+  order: "vanotium-cutting-board",
+  shop: "mellaramax-pillow",
+};
 
 const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
@@ -91,13 +95,13 @@ async function middleware(request: Request) {
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean);
 
-  if (segments[0] === "order" && segments.length === 1) {
-    await trackClick(ORDER_SHORTCUT_PRODUCT, ORDER_SHORTCUT_SLUG, request);
+  const shortcutProduct = segments.length === 1 ? SHORTCUTS[segments[0]] : undefined;
+  if (shortcutProduct) {
+    const slug = segments[0];
+    await trackClick(shortcutProduct, slug, request);
 
-    const destinationUrl = destinations[ORDER_SHORTCUT_PRODUCT];
-    const destination = destinationUrl
-      ? appendSubid(destinationUrl, ORDER_SHORTCUT_SLUG)
-      : new URL("/", url.origin).toString();
+    const destinationUrl = destinations[shortcutProduct];
+    const destination = destinationUrl ? appendSubid(destinationUrl, slug) : new URL("/", url.origin).toString();
 
     return new Response(null, {
       status: 302,
