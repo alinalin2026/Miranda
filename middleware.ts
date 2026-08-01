@@ -5,7 +5,7 @@ import { getCookie } from "./api/_lib/cookies";
 import { isLikelyBot } from "./api/_lib/bots";
 
 // Edge Middleware runs before static files, functions, and vercel.json
-// rewrites are even considered, so both paths below are guaranteed to be
+// rewrites are even considered, so all paths below are guaranteed to be
 // intercepted here rather than depending on rewrite-ordering to reach a
 // nested function.
 //
@@ -23,9 +23,18 @@ import { isLikelyBot } from "./api/_lib/bots";
 //    product's real destination URL with that slug appended as MaxBounty's
 //    &subid= parameter, so MaxBounty's own reporting can attribute the
 //    click to the same promoter our dashboard shows.
+//
+// A standalone shortcut, not tied to any review page:
+//
+// 3. /order -- redirects straight to the Vanotium cutting board's
+//    destination (no landing page in between), tracked under its own
+//    "order" slug with &subid=order, same as the two-step flow above.
 export const config = {
-  matcher: ["/review/:product/go/:slug", "/review/:product/buy"],
+  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order"],
 };
+
+const ORDER_SHORTCUT_PRODUCT = "vanotium-cutting-board";
+const ORDER_SHORTCUT_SLUG = "order";
 
 const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
@@ -81,6 +90,24 @@ function appendSubid(destinationUrl: string, slug: string): string {
 async function middleware(request: Request) {
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean);
+
+  if (segments[0] === "order" && segments.length === 1) {
+    await trackClick(ORDER_SHORTCUT_PRODUCT, ORDER_SHORTCUT_SLUG, request);
+
+    const destinationUrl = destinations[ORDER_SHORTCUT_PRODUCT];
+    const destination = destinationUrl
+      ? appendSubid(destinationUrl, ORDER_SHORTCUT_SLUG)
+      : new URL("/", url.origin).toString();
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: destination,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   const product = decodeURIComponent(segments[1] || "unknown");
   const refCookieName = `mr_ref_${product}`;
 
