@@ -20,6 +20,7 @@ interface LogEntry {
   slug: string;
   country: string;
   referrer: string;
+  userAgent?: string;
 }
 
 interface DashboardData {
@@ -199,12 +200,15 @@ export default function Dashboard() {
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {data?.recent.length ? (
               data.recent.map((entry, i) => (
-                <div key={i} className="flex items-center justify-between gap-4 text-sm border-b border-gray-100 pb-2">
-                  <span className="font-medium text-gray-900">
-                    /review/{entry.product}/go/{entry.slug}
-                  </span>
-                  <span className="text-gray-500">{entry.country}</span>
-                  <span className="text-gray-400 whitespace-nowrap">{new Date(entry.ts).toLocaleTimeString()}</span>
+                <div key={i} className="border-b border-gray-100 pb-2">
+                  <div className="flex items-center justify-between gap-4 text-sm">
+                    <span className="font-medium text-gray-900">
+                      /review/{entry.product}/go/{entry.slug}
+                    </span>
+                    <span className="text-gray-500">{entry.country}</span>
+                    <span className="text-gray-400 whitespace-nowrap">{new Date(entry.ts).toLocaleTimeString()}</span>
+                  </div>
+                  {entry.userAgent && <p className="text-xs text-gray-400 truncate mt-0.5">{entry.userAgent}</p>}
                 </div>
               ))
             ) : (
