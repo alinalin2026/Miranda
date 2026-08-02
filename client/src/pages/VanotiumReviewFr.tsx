@@ -10,10 +10,12 @@ import { Star, Check, X, ChevronDown, Droplets, Shield, Zap, Scissors } from "lu
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// Same buy endpoint as the English page (handled in middleware.ts) so the
-// existing tracking/geo-override logic in api/_lib/destinations.ts keeps
-// working unchanged.
-const SHOP_URL = "/review/vanotium-cutting-board/buy";
+// Direct MaxBounty affiliate link (not routed through /buy) with subid=fr
+// baked in, so MaxBounty's own reporting can attribute clicks from this
+// page. This bypasses our own click tracking in api/_lib/redis -- these
+// clicks won't show up in /dashboard.
+const SHOP_URL =
+  "https://afflat3d2.com/trk/lnk/8613E3A5-B445-46B2-BA81-CD563CDBA746/?o=32482&c=918277&a=798445&k=3E4BD68C2D6D53166E9E824DFEE5E678&l=38251&subid=fr";
 
 const whyPoints = [
   {
