@@ -5,6 +5,8 @@ import MellaraMaxReview from "@/pages/MellaraMaxReview";
 import NotFound from "@/pages/NotFound";
 import ProductReview from "@/pages/ProductReview";
 import VanotiumReview from "@/pages/VanotiumReview";
+import VanotiumReviewEs from "@/pages/VanotiumReviewEs";
+import VanotiumReviewFr from "@/pages/VanotiumReviewFr";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -16,6 +18,8 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/review/vanotium-cutting-board"} component={VanotiumReview} />
+      <Route path={"/review/vanotium-cutting-board/es"} component={VanotiumReviewEs} />
+      <Route path={"/review/vanotium-cutting-board/fr"} component={VanotiumReviewFr} />
       <Route path={"/review/mellaramax-pillow"} component={MellaraMaxReview} />
       <Route path={"/review/:productId"} component={ProductReview} />
       <Route path={"/dashboard"} component={Dashboard} />
