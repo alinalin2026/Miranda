@@ -2,9 +2,11 @@
  * Tea Match Quiz
  * Route: /tea-quiz
  *
- * Five one-tap questions, one near-full-screen card each, then a result
- * screen. Questions are deliberately about the visitor's own tastes and
- * goals -- nothing here states what any product does.
+ * Nine one-tap questions, one near-full-screen card each, then a result
+ * screen. Questions are deliberately about the visitor's own tastes,
+ * habits and preferences -- favourite tea, how they take it, how much they
+ * drink -- not symptoms (energy/digestion/sleep/stress). Nothing here
+ * states what any product does or treats.
  *
  * Rendered standalone, without the site Header/Footer: the result screen
  * is attributed to "Stacey" to stay continuous with the ad creative and
@@ -12,7 +14,12 @@
  * absent here. The rest of the site (including the recipe article) is
  * still Miranda's.
  *
- * The result screen's CTA points at /review/all-day-slimming-tea/buy, the
+ * The result screen gates the video CTA behind an email capture (POST
+ * /api/quiz-lead, stored in Redis -- see api/_lib/keys.ts). If that save
+ * fails for any reason, the visitor still proceeds to the video rather
+ * than getting stuck behind a broken backend.
+ *
+ * The video CTA points at /review/all-day-slimming-tea/buy, the
  * server-side redirect in middleware.ts, so the raw affiliate URL never
  * ships in the client bundle and promoter attribution (cookie -> &tid=)
  * keeps working. Reach this page via /quiz (see SHORTCUTS in
@@ -20,7 +27,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Loader2, PlayCircle } from "lucide-react";
+import { Loader2, Mail, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Brief pause between the last answer and the result. Cutting straight
@@ -40,51 +47,83 @@ type Question = {
 const questions: Question[] = [
   {
     image: "/images/tea/quiz/q1_herbs.jpg",
-    eyebrow: "Question 1 of 5",
+    eyebrow: "Question 1 of 9",
     question: "Do you believe in the power of plants?",
     options: ["Absolutely", "Somewhat", "I'm curious"],
   },
   {
     image: "/images/tea/quiz/q2_tea.jpg",
-    eyebrow: "Question 2 of 5",
+    eyebrow: "Question 2 of 9",
+    question: "How many cups of tea do you drink a day?",
+    options: ["1", "2-3", "4+", "I want to drink more"],
+  },
+  {
+    image: "/images/tea/quiz/q3_spread.jpg",
+    eyebrow: "Question 3 of 9",
     question: "What's your favourite tea?",
     options: ["Green", "Herbal", "Black", "Mint"],
   },
   {
-    image: "/images/tea/quiz/q3_spread.jpg",
-    eyebrow: "Question 3 of 5",
+    image: "/images/tea/quiz/q4_iced.jpg",
+    eyebrow: "Question 4 of 9",
+    question: "What flavours do you enjoy most?",
+    options: ["Fruity", "Sour", "Sweet", "Earthy"],
+  },
+  {
+    image: "/images/tea/quiz/q5_glass.jpg",
+    eyebrow: "Question 5 of 9",
     question: "When do you drink your tea?",
     options: ["Morning", "Afternoon", "Evening", "All day"],
   },
   {
-    image: "/images/tea/quiz/q4_iced.jpg",
-    eyebrow: "Question 4 of 5",
+    image: "/images/tea/glass_closeup.jpg",
+    eyebrow: "Question 6 of 9",
     question: "Hot or iced?",
     options: ["Hot", "Iced", "Both"],
   },
   {
+    image: "/images/tea/hero_iced_tea.jpg",
+    eyebrow: "Question 7 of 9",
+    question: "What age group are you in?",
+    options: ["Under 40", "40s", "50s", "60+"],
+  },
+  {
+    image: "/images/tea/quiz/q3_spread.jpg",
+    eyebrow: "Question 8 of 9",
+    question: "How do you take your tea?",
+    options: ["Plain", "With honey", "With lemon", "With milk"],
+  },
+  {
     image: "/images/tea/quiz/q5_glass.jpg",
-    eyebrow: "Question 5 of 5",
-    question: "What do you want from your tea?",
+    eyebrow: "Question 9 of 9",
+    question: "What do you want most from your tea?",
     options: ["Energy", "Calm", "Feel lighter", "All of it"],
   },
 ];
 
 type Answers = {
   plants: string;
+  cupsPerDay: string;
   favourite: string;
+  flavour: string;
   when: string;
   temperature: string;
+  ageGroup: string;
+  preparation: string;
   goal: string;
 };
 
 function toAnswers(picked: string[]): Answers {
   return {
     plants: picked[0] ?? "Absolutely",
-    favourite: picked[1] ?? "Herbal",
-    when: picked[2] ?? "All day",
-    temperature: picked[3] ?? "Both",
-    goal: picked[4] ?? "All of it",
+    cupsPerDay: picked[1] ?? "2-3",
+    favourite: picked[2] ?? "Herbal",
+    flavour: picked[3] ?? "Fruity",
+    when: picked[4] ?? "All day",
+    temperature: picked[5] ?? "Both",
+    ageGroup: picked[6] ?? "50s",
+    preparation: picked[7] ?? "Plain",
+    goal: picked[8] ?? "All of it",
   };
 }
 
@@ -107,22 +146,22 @@ const results: Record<string, { name: string; blurb: (a: Answers) => string }> =
   Energy: {
     name: "The Morning Lift Blend",
     blurb: (a) =>
-      `You reach for tea ${whenPhrase(a.when)} and want something with a bit of lift. A brighter ${a.favourite.toLowerCase()} blend, ${tempPhrase(a.temperature)}, fits that best.`,
+      `You reach for tea ${whenPhrase(a.when)} and want something with a bit of lift. A brighter ${a.favourite.toLowerCase()} blend with a ${a.flavour.toLowerCase()} edge, ${tempPhrase(a.temperature)}, fits that best.`,
   },
   Calm: {
     name: "The Evening Calm Blend",
     blurb: (a) =>
-      `You're after the quiet part of the day. A softer, caffeine-light herbal blend — ${tempPhrase(a.temperature)}, the way you like it — suits drinking it ${whenPhrase(a.when)}.`,
+      `You're after the quiet part of the day. A softer, caffeine-light herbal blend — ${a.flavour.toLowerCase()}, ${tempPhrase(a.temperature)}, the way you like it — suits drinking it ${whenPhrase(a.when)}.`,
   },
   "Feel lighter": {
     name: "The Everyday Light Blend",
     blurb: (a) =>
-      `You want something that sits well and doesn't weigh you down. A gentle ${a.favourite.toLowerCase()} blend you can drink ${whenPhrase(a.when)}, ${tempPhrase(a.temperature)}, is the easiest place to start.`,
+      `You want something that sits well and doesn't weigh you down. A gentle ${a.favourite.toLowerCase()} blend with a ${a.flavour.toLowerCase()} note, drunk ${whenPhrase(a.when)}, ${tempPhrase(a.temperature)}, is the easiest place to start.`,
   },
   "All of it": {
     name: "The Everyday All-Rounder",
     blurb: (a) =>
-      `You're not after one single thing — you want a tea that does a bit of everything. A balanced ${a.favourite.toLowerCase()} blend, ${tempPhrase(a.temperature)}, covers the most ground, and it's an easy one to come back to ${whenPhrase(a.when)}.`,
+      `You're not after one single thing — you want a tea that does a bit of everything. A balanced ${a.favourite.toLowerCase()} blend, leaning ${a.flavour.toLowerCase()}, ${tempPhrase(a.temperature)}, covers the most ground, and it's an easy one to come back to ${whenPhrase(a.when)}.`,
   },
 };
 
@@ -146,6 +185,9 @@ export default function TeaQuiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [submittingEmail, setSubmittingEmail] = useState(false);
 
   const done = step >= questions.length;
 
@@ -158,6 +200,26 @@ export default function TeaQuiz() {
   function choose(option: string) {
     setAnswers((prev) => [...prev, option]);
     setStep((s) => s + 1);
+  }
+
+  // Never leave a real prospect stuck behind a broken backend: if the save
+  // fails, still let them through to the video. The try/catch only
+  // determines whether we logged the lead, not whether they proceed.
+  async function submitEmail(e: React.FormEvent, picked: Answers, resultName: string) {
+    e.preventDefault();
+    setSubmittingEmail(true);
+    try {
+      await fetch("/api/quiz-lead", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, answers: picked, result: resultName, source: "quiz" }),
+      });
+    } catch (err) {
+      console.error("Failed to save quiz lead", err);
+    } finally {
+      setSubmittingEmail(false);
+      setEmailSubmitted(true);
+    }
   }
 
   // Intro carries the same face and the same line as the ad creative, so
@@ -216,10 +278,10 @@ export default function TeaQuiz() {
             </p>
 
             <p className="font-semibold text-foreground">
-              So before I show you what's in mine, let me ask you five quick
-              questions. Takes about twenty seconds — and at the end I'll show
-              you the blend that actually fits how you drink tea, and explain
-              why the vinegar is in there.
+              So before I show you what's in mine, let me ask you a few quick
+              questions about how you drink tea. Takes about a minute — and at
+              the end I'll show you the blend that actually fits you, and
+              explain why the vinegar is in there.
             </p>
           </div>
 
@@ -278,24 +340,54 @@ export default function TeaQuiz() {
             {result.blurb(picked)}
           </p>
 
-          <p className="text-foreground/70 text-xl leading-relaxed mb-3">
+          <p className="text-foreground/70 text-xl leading-relaxed mb-8">
             But the vinegar is only one part of it. What matters just as much
             is the tea underneath — and that's the part most people get wrong.
           </p>
 
-          <p className="text-foreground/70 text-xl leading-relaxed mb-8">
-            Stacey walks through the whole thing in the video below.
-          </p>
-
-          <a href={BUY_URL} target="_blank" rel="nofollow sponsored" className="block">
-            <Button
-              size="lg"
-              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
-            >
-              <PlayCircle className="!w-8 !h-8 mr-1" />
-              Watch The Video
-            </Button>
-          </a>
+          {!emailSubmitted ? (
+            <form onSubmit={(e) => submitEmail(e, picked, result.name)} className="space-y-4">
+              <p className="text-foreground/70 text-lg leading-relaxed mb-2">
+                Where should I send your full recipe?
+              </p>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Your email"
+                className="w-full text-center text-xl px-6 py-5 rounded-2xl border-2 border-border bg-card text-foreground focus:outline-none focus:border-primary transition-colors"
+              />
+              <Button
+                type="submit"
+                size="lg"
+                disabled={submittingEmail}
+                className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+              >
+                <Mail className="!w-7 !h-7 mr-1" />
+                {submittingEmail ? "Sending…" : "Send Me My Recipe"}
+              </Button>
+              <p className="text-sm text-foreground/50">
+                Just the recipe. No spam.
+              </p>
+            </form>
+          ) : (
+            <>
+              <p className="text-foreground/70 text-lg leading-relaxed mb-6">
+                On its way. Stacey walks through the whole thing in the video
+                below.
+              </p>
+              <a href={BUY_URL} target="_blank" rel="nofollow sponsored" className="block">
+                <Button
+                  size="lg"
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                >
+                  <PlayCircle className="!w-8 !h-8 mr-1" />
+                  Watch The Video
+                </Button>
+              </a>
+            </>
+          )}
         </div>
       </div>
     );

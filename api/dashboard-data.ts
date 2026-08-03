@@ -23,6 +23,14 @@ interface ProductRow {
   slugs: SlugRow[];
 }
 
+interface QuizLead {
+  ts: number;
+  email: string;
+  answers: Record<string, string>;
+  result: string;
+  source: string;
+}
+
 function parseLogEntry(raw: unknown): LogEntry | null {
   if (typeof raw === "string") {
     try {
@@ -33,6 +41,20 @@ function parseLogEntry(raw: unknown): LogEntry | null {
   }
   if (raw && typeof raw === "object") {
     return raw as LogEntry;
+  }
+  return null;
+}
+
+function parseQuizLead(raw: unknown): QuizLead | null {
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as QuizLead;
+    } catch {
+      return null;
+    }
+  }
+  if (raw && typeof raw === "object") {
+    return raw as QuizLead;
   }
   return null;
 }
@@ -70,13 +92,20 @@ export default async function handler(request: Request) {
     );
     productRows.sort((a, b) => b.total - a.total);
 
-    const [totalHits, rawLog] = await Promise.all([redis.get<number>(keys.grandTotal), redis.lrange(keys.log, 0, 49)]);
+    const [totalHits, rawLog, quizLeadCount, rawQuizLeads] = await Promise.all([
+      redis.get<number>(keys.grandTotal),
+      redis.lrange(keys.log, 0, 49),
+      redis.get<number>(keys.quizLeadCount),
+      redis.lrange(keys.quizLeads, 0, 49),
+    ]);
 
     const recent = (rawLog as unknown[]).map(parseLogEntry).filter((entry): entry is LogEntry => entry !== null);
+    const quizLeads = (rawQuizLeads as unknown[]).map(parseQuizLead).filter((entry): entry is QuizLead => entry !== null);
 
-    return new Response(JSON.stringify({ totalHits: totalHits ?? 0, products: productRows, recent }), {
-      headers: { "content-type": "application/json", "cache-control": "no-store" },
-    });
+    return new Response(
+      JSON.stringify({ totalHits: totalHits ?? 0, products: productRows, recent, quizLeadCount: quizLeadCount ?? 0, quizLeads }),
+      { headers: { "content-type": "application/json", "cache-control": "no-store" } },
+    );
   } catch (err) {
     console.error("dashboard-data failed", err);
     const message = err instanceof Error ? err.message : String(err);
