@@ -27,22 +27,29 @@ import { isLikelyBot } from "./api/_lib/bots";
 //    api/_lib/destinations.ts (e.g. US traffic on the cutting board gets a
 //    separate US-specific offer link).
 //
-// Standalone shortcuts, not tied to any review page -- each redirects
-// straight to a product's destination (no landing page in between),
-// tracked under a slug matching its own path name (e.g. &subid=order),
-// same as the two-step flow above.
+// Standalone shortcuts, not tied to any review page, tracked under a slug
+// matching their own path name (e.g. &subid=order). Two flavors:
 //
+// - throughReview: false (default) -- redirects straight to the product's
+//   destination, no landing page in between, same as the /buy step above.
 // 3. /order -- Vanotium cutting board
 // 4. /shop  -- MellaraMax pillow
-// 5. /tea   -- All Day Slimming Tea
+//
+// - throughReview: true -- behaves like a /go/<slug> link (logs the click,
+//   sets the ref cookie) and redirects to the review page itself rather
+//   than the raw offer, so the visitor always sees the on-page copy first.
+//   Used for offers where the review page exists specifically to keep
+//   sensitive claims off anything ad-adjacent -- skipping straight to the
+//   destination would defeat that.
+// 5. /tea -- All Day Slimming Tea
 export const config = {
   matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order", "/shop", "/tea"],
 };
 
-const SHORTCUTS: Record<string, string> = {
-  order: "vanotium-cutting-board",
-  shop: "mellaramax-pillow",
-  tea: "all-day-slimming-tea",
+const SHORTCUTS: Record<string, { product: string; throughReview?: boolean }> = {
+  order: { product: "vanotium-cutting-board" },
+  shop: { product: "mellaramax-pillow" },
+  tea: { product: "all-day-slimming-tea", throughReview: true },
 };
 
 const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -105,14 +112,26 @@ async function middleware(request: Request) {
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean);
 
-  const shortcutProduct = segments.length === 1 ? SHORTCUTS[segments[0]] : undefined;
-  if (shortcutProduct) {
+  const shortcut = segments.length === 1 ? SHORTCUTS[segments[0]] : undefined;
+  if (shortcut) {
     const slug = segments[0];
-    await trackClick(shortcutProduct, slug, request);
+    await trackClick(shortcut.product, slug, request);
+
+    if (shortcut.throughReview) {
+      const dest = new URL(`/review/${shortcut.product}`, url.origin);
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: dest.toString(),
+          "Set-Cookie": `mr_ref_${shortcut.product}=${encodeURIComponent(slug)}; Path=/; Max-Age=${REF_COOKIE_MAX_AGE}; SameSite=Lax; Secure`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
 
     const country = request.headers.get("x-vercel-ip-country") || "XX";
-    const destinationUrl = resolveDestination(shortcutProduct, country);
-    const destination = destinationUrl ? appendSubid(destinationUrl, slug, shortcutProduct) : new URL("/", url.origin).toString();
+    const destinationUrl = resolveDestination(shortcut.product, country);
+    const destination = destinationUrl ? appendSubid(destinationUrl, slug, shortcut.product) : new URL("/", url.origin).toString();
 
     return new Response(null, {
       status: 302,
