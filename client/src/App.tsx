@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import AllDaySlimmingTea from "@/pages/AllDaySlimmingTea";
 import Dashboard from "@/pages/Dashboard";
 import MellaraMaxReview from "@/pages/MellaraMaxReview";
 import NotFound from "@/pages/NotFound";
@@ -21,6 +22,7 @@ function Router() {
       <Route path={"/review/vanotium-cutting-board/es"} component={VanotiumReviewEs} />
       <Route path={"/review/vanotium-cutting-board/fr"} component={VanotiumReviewFr} />
       <Route path={"/review/mellaramax-pillow"} component={MellaraMaxReview} />
+      <Route path={"/review/all-day-slimming-tea"} component={AllDaySlimmingTea} />
       <Route path={"/review/:productId"} component={ProductReview} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/404"} component={NotFound} />

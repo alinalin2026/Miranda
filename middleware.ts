@@ -34,13 +34,15 @@ import { isLikelyBot } from "./api/_lib/bots";
 //
 // 3. /order -- Vanotium cutting board
 // 4. /shop  -- MellaraMax pillow
+// 5. /tea   -- All Day Slimming Tea
 export const config = {
-  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order", "/shop"],
+  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order", "/shop", "/tea"],
 };
 
 const SHORTCUTS: Record<string, string> = {
   order: "vanotium-cutting-board",
   shop: "mellaramax-pillow",
+  tea: "all-day-slimming-tea",
 };
 
 const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
