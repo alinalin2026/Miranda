@@ -6,10 +6,16 @@
  * screen. Questions are deliberately about the visitor's own tastes and
  * goals -- nothing here states what any product does.
  *
+ * Rendered standalone, without the site Header/Footer: the result screen
+ * is attributed to "Stacey" to stay continuous with the ad creative and
+ * the video it hands off to, so the Miranda branding is deliberately
+ * absent here. The rest of the site (including the recipe article) is
+ * still Miranda's.
+ *
  * The result screen's CTA points at /review/all-day-slimming-tea/buy, the
  * server-side redirect in middleware.ts, so the raw affiliate URL never
  * ships in the client bundle and promoter attribution (cookie -> &tid=)
- * keeps working. Reach this page via /tea-quiz (see SHORTCUTS in
+ * keeps working. Reach this page via /quiz (see SHORTCUTS in
  * middleware.ts) to have the click logged and the ref cookie set.
  */
 
@@ -185,7 +191,7 @@ export default function TeaQuiz() {
           </p>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-5">
-            Miranda's Secret Tea Recipe
+            Stacey's Secret Tea Recipe
           </h1>
 
           <p className="text-primary font-bold text-xl mb-4">
@@ -197,7 +203,7 @@ export default function TeaQuiz() {
           </p>
 
           <p className="text-foreground/70 text-xl leading-relaxed mb-8">
-            Miranda walks through the whole thing in the video below.
+            Stacey walks through the whole thing in the video below.
           </p>
 
           <a href={BUY_URL} target="_blank" rel="nofollow sponsored" className="block">
