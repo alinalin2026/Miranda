@@ -36,20 +36,24 @@ import { isLikelyBot } from "./api/_lib/bots";
 // 4. /shop  -- MellaraMax pillow
 //
 // - throughReview: true -- behaves like a /go/<slug> link (logs the click,
-//   sets the ref cookie) and redirects to the review page itself rather
-//   than the raw offer, so the visitor always sees the on-page copy first.
-//   Used for offers where the review page exists specifically to keep
-//   sensitive claims off anything ad-adjacent -- skipping straight to the
-//   destination would defeat that.
-// 5. /tea -- All Day Slimming Tea
+//   sets the ref cookie) and redirects to an on-site page rather than the
+//   raw offer, so the visitor always sees our own copy first. Used for
+//   offers where that page exists specifically to keep sensitive claims off
+//   anything ad-adjacent -- skipping straight to the destination would
+//   defeat that. Defaults to /review/<product>; set landingPath to send
+//   the visitor somewhere else instead (which must not itself be a
+//   shortcut path, or the redirect would loop).
+// 5. /tea  -- All Day Slimming Tea, to its review page
+// 6. /quiz -- All Day Slimming Tea, to the tea quiz at /tea-quiz
 export const config = {
-  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order", "/shop", "/tea"],
+  matcher: ["/review/:product/go/:slug", "/review/:product/buy", "/order", "/shop", "/tea", "/quiz"],
 };
 
-const SHORTCUTS: Record<string, { product: string; throughReview?: boolean }> = {
+const SHORTCUTS: Record<string, { product: string; throughReview?: boolean; landingPath?: string }> = {
   order: { product: "vanotium-cutting-board" },
   shop: { product: "mellaramax-pillow" },
   tea: { product: "all-day-slimming-tea", throughReview: true },
+  quiz: { product: "all-day-slimming-tea", throughReview: true, landingPath: "/tea-quiz" },
 };
 
 const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -118,7 +122,7 @@ async function middleware(request: Request) {
     await trackClick(shortcut.product, slug, request);
 
     if (shortcut.throughReview) {
-      const dest = new URL(`/review/${shortcut.product}`, url.origin);
+      const dest = new URL(shortcut.landingPath ?? `/review/${shortcut.product}`, url.origin);
       return new Response(null, {
         status: 302,
         headers: {
