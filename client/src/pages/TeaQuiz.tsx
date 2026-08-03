@@ -142,6 +142,7 @@ function ProgressBar({ step }: { step: number }) {
 }
 
 export default function TeaQuiz() {
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false);
@@ -157,6 +158,42 @@ export default function TeaQuiz() {
   function choose(option: string) {
     setAnswers((prev) => [...prev, option]);
     setStep((s) => s + 1);
+  }
+
+  // Intro carries the same face and the same line as the ad creative, so
+  // the page a visitor lands on matches what they just tapped.
+  if (!started) {
+    return (
+      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md text-center">
+          <img
+            src="/images/tea/stacey.jpg"
+            alt="Stacey with a cup of tea"
+            className="w-44 h-44 rounded-full object-cover shadow-xl mx-auto mb-8"
+          />
+
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-6">
+            Hi, I'm Stacey
+          </h1>
+
+          <p className="text-foreground/75 text-2xl leading-relaxed mb-4">
+            I'm 51 — and every morning I put a bit of vinegar in my tea.
+          </p>
+
+          <p className="text-foreground/60 text-xl leading-relaxed mb-10">
+            Answer 5 quick questions and I'll show you the blend that fits you.
+          </p>
+
+          <Button
+            size="lg"
+            onClick={() => setStarted(true)}
+            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+          >
+            Take The Quiz →
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (done && !revealed) {
