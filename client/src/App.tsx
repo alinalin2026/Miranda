@@ -6,6 +6,7 @@ import Dashboard from "@/pages/Dashboard";
 import MellaraMaxReview from "@/pages/MellaraMaxReview";
 import NotFound from "@/pages/NotFound";
 import ProductReview from "@/pages/ProductReview";
+import TeaQuiz from "@/pages/TeaQuiz";
 import VanotiumReview from "@/pages/VanotiumReview";
 import VanotiumReviewEs from "@/pages/VanotiumReviewEs";
 import VanotiumReviewFr from "@/pages/VanotiumReviewFr";
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/review/mellaramax-pillow"} component={MellaraMaxReview} />
       <Route path={"/review/all-day-slimming-tea"} component={AllDaySlimmingTea} />
       <Route path={"/recipes/costa-rican-iced-tea"} component={CostaRicanIcedTea} />
+      <Route path={"/tea-quiz"} component={TeaQuiz} />
       <Route path={"/review/:productId"} component={ProductReview} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/404"} component={NotFound} />
