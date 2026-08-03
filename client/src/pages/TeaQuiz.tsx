@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Brief pause between the last answer and the result. Cutting straight
@@ -181,23 +181,32 @@ export default function TeaQuiz() {
           />
 
           <p className="text-primary font-bold text-base uppercase tracking-widest mb-4">
-            Your match
+            Based on your answers
           </p>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-5">
-            {result.name}
+            Miranda's Secret Tea Recipe
           </h1>
 
-          <p className="text-foreground/70 text-xl leading-relaxed mb-8">
+          <p className="text-primary font-bold text-xl mb-4">
+            Your match: {result.name}
+          </p>
+
+          <p className="text-foreground/70 text-xl leading-relaxed mb-3">
             {result.blurb(picked)}
+          </p>
+
+          <p className="text-foreground/70 text-xl leading-relaxed mb-8">
+            Miranda walks through the whole thing in the video below.
           </p>
 
           <a href={BUY_URL} target="_blank" rel="nofollow sponsored" className="block">
             <Button
               size="lg"
-              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-xl px-8 py-8 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
             >
-              See My Match →
+              <PlayCircle className="!w-8 !h-8 mr-1" />
+              Watch The Video
             </Button>
           </a>
         </div>
