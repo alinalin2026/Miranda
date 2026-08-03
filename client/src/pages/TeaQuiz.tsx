@@ -161,33 +161,72 @@ export default function TeaQuiz() {
   }
 
   // Intro carries the same face and the same line as the ad creative, so
-  // the page a visitor lands on matches what they just tapped.
+  // the page a visitor lands on matches what they just tapped, and it
+  // frames the quiz as the route to the answer rather than a detour
+  // around it.
   if (!started) {
     return (
-      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md text-center">
+      <div className="min-h-[100dvh] bg-background px-6 py-12">
+        <div className="w-full max-w-md mx-auto">
           <img
             src="/images/tea/stacey.jpg"
             alt="Stacey with a cup of tea"
             className="w-44 h-44 rounded-full object-cover shadow-xl mx-auto mb-8"
           />
 
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-6 text-center">
             Hi, I'm Stacey
           </h1>
 
-          <p className="text-foreground/75 text-2xl leading-relaxed mb-4">
-            I'm 51 — and every morning I put a bit of vinegar in my tea.
-          </p>
+          <div className="space-y-5 text-foreground/80 text-xl leading-relaxed">
+            <p>
+              I'm 51 — and every single morning, I put a splash of apple cider
+              vinegar in my tea.
+            </p>
 
-          <p className="text-foreground/60 text-xl leading-relaxed mb-10">
-            Answer 5 quick questions and I'll show you the blend that fits you.
-          </p>
+            <p>
+              I know exactly how that sounds. The first time a friend told me
+              she did it, I pulled a face. Vinegar belongs on a salad, not in a
+              teacup. But she'd been doing it for years, and she was stubborn
+              about it, so eventually I stopped arguing and tried it.
+            </p>
+
+            <p>
+              The honest truth? That first cup was awful. I used far too much,
+              didn't balance it with anything, and it tasted like a mistake. It
+              took me a few weeks of fiddling — a little lemon, some fresh mint,
+              the right tea underneath it — before I landed on something I
+              actually looked forward to.
+            </p>
+
+            <p>
+              That was four years ago, and I haven't skipped a morning since.
+              Not because it's magic. Because it's <em>mine</em> — ten quiet
+              minutes before the house wakes up, a warm cup in my hands,
+              something that tastes good and feels like looking after myself.
+            </p>
+
+            <p>
+              People ask me for the recipe constantly. Here's the thing though:
+              there isn't <em>one</em> recipe. What works depends on when you
+              drink your tea, whether you take it hot or iced, whether you want
+              something bright in the morning or something calmer at night. My
+              blend is built around my routine. Yours should be built around
+              yours.
+            </p>
+
+            <p className="font-semibold text-foreground">
+              So before I show you what's in mine, let me ask you five quick
+              questions. Takes about twenty seconds — and at the end I'll show
+              you the blend that actually fits how you drink tea, and explain
+              why the vinegar is in there.
+            </p>
+          </div>
 
           <Button
             size="lg"
             onClick={() => setStarted(true)}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+            className="w-full mt-10 bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
           >
             Take The Quiz →
           </Button>
@@ -237,6 +276,11 @@ export default function TeaQuiz() {
 
           <p className="text-foreground/70 text-xl leading-relaxed mb-3">
             {result.blurb(picked)}
+          </p>
+
+          <p className="text-foreground/70 text-xl leading-relaxed mb-3">
+            But the vinegar is only one part of it. What matters just as much
+            is the tea underneath — and that's the part most people get wrong.
           </p>
 
           <p className="text-foreground/70 text-xl leading-relaxed mb-8">
