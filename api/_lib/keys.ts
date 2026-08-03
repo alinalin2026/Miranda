@@ -3,8 +3,14 @@
 // "go:*" keys for the same /go/:slug tracking pattern. Namespace every
 // key this project writes so the two projects' click data never mixes.
 const NS = "miranda:go";
+const QUIZ_NS = "miranda:quiz";
 
 export const keys = {
+  // Capped log of quiz email captures, newest first.
+  quizLeads: `${QUIZ_NS}:leads`,
+  // Total quiz emails captured, all-time (the list above is capped).
+  quizLeadCount: `${QUIZ_NS}:leads:count`,
+
   // Per (product, promoter-slug) click count. Any slug value works without
   // pre-registration -- it's just a Redis key, created on first use.
   hits: (product: string, slug: string) => `${NS}:hits:${product}:${slug}`,

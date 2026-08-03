@@ -23,10 +23,20 @@ interface LogEntry {
   userAgent?: string;
 }
 
+interface QuizLead {
+  ts: number;
+  email: string;
+  answers: Record<string, string>;
+  result: string;
+  source: string;
+}
+
 interface DashboardData {
   totalHits: number;
   products: ProductRow[];
   recent: LogEntry[];
+  quizLeadCount: number;
+  quizLeads: QuizLead[];
 }
 
 const STORAGE_KEY = "mr_admin_pw";
@@ -227,7 +237,7 @@ export default function Dashboard() {
       </header>
 
       <main className="container max-w-5xl mx-auto py-8">
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <p className="text-sm text-gray-500 mb-1">Total Clicks</p>
             <p className="text-3xl font-bold text-gray-900">{data?.totalHits ?? 0}</p>
@@ -235,6 +245,10 @@ export default function Dashboard() {
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <p className="text-sm text-gray-500 mb-1">Products Tracked</p>
             <p className="text-3xl font-bold text-gray-900">{data?.products.length ?? 0}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <p className="text-sm text-gray-500 mb-1">Quiz Emails Captured</p>
+            <p className="text-3xl font-bold text-gray-900">{data?.quizLeadCount ?? 0}</p>
           </div>
         </div>
 
@@ -256,6 +270,25 @@ export default function Dashboard() {
           ) : (
             <p className="px-4 py-8 text-center text-gray-400">No clicks yet</p>
           )}
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8">
+          <h2 className="font-bold text-gray-900 mb-4">Quiz Leads</h2>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {data?.quizLeads.length ? (
+              data.quizLeads.map((lead, i) => (
+                <div key={i} className="border-b border-gray-100 pb-2">
+                  <div className="flex items-center justify-between gap-4 text-sm">
+                    <span className="font-medium text-gray-900">{lead.email}</span>
+                    <span className="text-gray-500">{lead.result}</span>
+                    <span className="text-gray-400 whitespace-nowrap">{new Date(lead.ts).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-400 text-sm">No quiz emails captured yet</p>
+            )}
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6">
