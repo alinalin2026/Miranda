@@ -13,8 +13,14 @@
  * middleware.ts) to have the click logged and the ref cookie set.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// Brief pause between the last answer and the result. Cutting straight
+// from a tap to the result screen reads as a jump-cut; a moment of
+// "working on it" makes the result feel like it was arrived at.
+const REVEAL_DELAY_MS = 2200;
 
 const BUY_URL = "/review/all-day-slimming-tea/buy";
 
@@ -132,12 +138,33 @@ function ProgressBar({ step }: { step: number }) {
 export default function TeaQuiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [revealed, setRevealed] = useState(false);
 
   const done = step >= questions.length;
+
+  useEffect(() => {
+    if (!done) return;
+    const timer = setTimeout(() => setRevealed(true), REVEAL_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [done]);
 
   function choose(option: string) {
     setAnswers((prev) => [...prev, option]);
     setStep((s) => s + 1);
+  }
+
+  if (done && !revealed) {
+    return (
+      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6">
+        <Loader2 className="w-16 h-16 text-primary animate-spin mb-8" />
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground text-center leading-tight">
+          Preparing your tea…
+        </h1>
+        <p className="text-foreground/60 text-lg text-center mt-4">
+          Matching your answers to the right blend
+        </p>
+      </div>
+    );
   }
 
   if (done) {
@@ -173,11 +200,6 @@ export default function TeaQuiz() {
               See My Match →
             </Button>
           </a>
-
-          <p className="text-sm text-foreground/50 leading-relaxed mt-6">
-            Sponsored content. We may earn a commission from purchases made
-            through this link, at no extra cost to you.
-          </p>
         </div>
       </div>
     );
