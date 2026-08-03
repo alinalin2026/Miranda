@@ -20,11 +20,11 @@ export default function CostaRicanIcedTea() {
 
       <main className="flex-1">
         <article className="container max-w-2xl py-16">
-          <p className="text-primary font-semibold text-xs uppercase tracking-widest mb-4">
+          <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4">
             Recipes &amp; Wellness
           </p>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight mb-8">
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight mb-8">
             I Tried The Costa Rican Iced Tea Recipe Everyone's Sharing —
             Here's What I Thought
           </h1>
@@ -34,9 +34,9 @@ export default function CostaRicanIcedTea() {
             <img
               src="/images/miranda-portrait.jpg"
               alt="Miranda Rodríguez"
-              className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+              className="w-20 h-20 rounded-full object-cover flex-shrink-0"
             />
-            <p className="text-foreground/70 text-[0.9375rem] leading-relaxed">
+            <p className="text-foreground/70 text-lg leading-relaxed">
               Hi, I'm Miranda — 40, based in Austin, and a bit of a tea person. I've been
               collecting recipes like this one for years, mostly because I got tired of
               choosing between plain water and another cup of coffee every afternoon.
@@ -49,7 +49,7 @@ export default function CostaRicanIcedTea() {
             className="w-full rounded-2xl shadow-lg mb-8"
           />
 
-          <div className="space-y-5 text-foreground/80 text-[1.0625rem] leading-relaxed">
+          <div className="space-y-6 text-foreground/80 text-xl leading-relaxed">
             <p>
               A few weeks ago, a version of this recipe kept showing up in my feed — mint,
               lemon, and a splash of apple cider vinegar, brewed into a simple iced tea. It's
@@ -71,11 +71,11 @@ export default function CostaRicanIcedTea() {
               className="w-full rounded-2xl shadow-lg my-8"
             />
 
-            <h2 className="text-2xl font-bold text-foreground pt-4">The Recipe</h2>
+            <h2 className="text-3xl font-bold text-foreground pt-4">The Recipe</h2>
 
             <div className="bg-card border border-border rounded-xl p-6 space-y-4">
               <div>
-                <h3 className="font-semibold text-foreground mb-2">Ingredients</h3>
+                <h3 className="font-semibold text-foreground mb-2 text-xl">Ingredients</h3>
                 <ul className="list-disc list-inside space-y-1 text-foreground/80">
                   <li>1 cup brewed black or green tea, cooled</li>
                   <li>1 tbsp apple cider vinegar</li>
@@ -86,7 +86,7 @@ export default function CostaRicanIcedTea() {
                 </ul>
               </div>
               <div>
-                <h3 className="font-semibold text-foreground mb-2">Steps</h3>
+                <h3 className="font-semibold text-foreground mb-2 text-xl">Steps</h3>
                 <ol className="list-decimal list-inside space-y-1 text-foreground/80">
                   <li>Brew the tea and let it cool to room temperature.</li>
                   <li>Stir in the apple cider vinegar and lemon juice.</li>
@@ -97,7 +97,7 @@ export default function CostaRicanIcedTea() {
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-foreground pt-4">A Few Honest Notes</h2>
+            <h2 className="text-3xl font-bold text-foreground pt-4">A Few Honest Notes</h2>
 
             <p>
               Apple cider vinegar and mint have both been kitchen staples for a very long time —
@@ -115,7 +115,7 @@ export default function CostaRicanIcedTea() {
               and that's worth being mindful of, same as with citrus.
             </p>
 
-            <h2 className="text-2xl font-bold text-foreground pt-4">
+            <h2 className="text-3xl font-bold text-foreground pt-4">
               If You'd Rather Try a Ready-Made Blend
             </h2>
 
