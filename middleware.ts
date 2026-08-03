@@ -1,5 +1,5 @@
 import { getRedis } from "./api/_lib/redis";
-import { destinations, destinationOverridesByCountry } from "./api/_lib/destinations";
+import { destinations, destinationOverridesByCountry, subidParamByProduct } from "./api/_lib/destinations";
 import { keys } from "./api/_lib/keys";
 import { getCookie } from "./api/_lib/cookies";
 import { isLikelyBot } from "./api/_lib/bots";
@@ -91,9 +91,10 @@ async function trackClick(product: string, slug: string, request: Request) {
   }
 }
 
-function appendSubid(destinationUrl: string, slug: string): string {
+function appendSubid(destinationUrl: string, slug: string, product: string): string {
+  const paramName = subidParamByProduct[product] ?? "subid";
   const separator = destinationUrl.includes("?") ? "&" : "?";
-  return `${destinationUrl}${separator}subid=${encodeURIComponent(slug)}`;
+  return `${destinationUrl}${separator}${paramName}=${encodeURIComponent(slug)}`;
 }
 
 function resolveDestination(product: string, country: string): string | undefined {
@@ -111,7 +112,7 @@ async function middleware(request: Request) {
 
     const country = request.headers.get("x-vercel-ip-country") || "XX";
     const destinationUrl = resolveDestination(shortcutProduct, country);
-    const destination = destinationUrl ? appendSubid(destinationUrl, slug) : new URL("/", url.origin).toString();
+    const destination = destinationUrl ? appendSubid(destinationUrl, slug, shortcutProduct) : new URL("/", url.origin).toString();
 
     return new Response(null, {
       status: 302,
@@ -145,7 +146,7 @@ async function middleware(request: Request) {
   const slug = getCookie(request, refCookieName) || "onsite";
   const country = request.headers.get("x-vercel-ip-country") || "XX";
   const destinationUrl = resolveDestination(product, country);
-  const destination = destinationUrl ? appendSubid(destinationUrl, slug) : new URL("/", url.origin).toString();
+  const destination = destinationUrl ? appendSubid(destinationUrl, slug, product) : new URL("/", url.origin).toString();
 
   return new Response(null, {
     status: 302,
