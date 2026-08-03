@@ -58,6 +58,62 @@ const questions: Question[] = [
   },
 ];
 
+type Answers = {
+  plants: string;
+  favourite: string;
+  when: string;
+  temperature: string;
+  goal: string;
+};
+
+function toAnswers(picked: string[]): Answers {
+  return {
+    plants: picked[0] ?? "Absolutely",
+    favourite: picked[1] ?? "Herbal",
+    when: picked[2] ?? "All day",
+    temperature: picked[3] ?? "Both",
+    goal: picked[4] ?? "All of it",
+  };
+}
+
+// "All day" and "Both" don't slot into a sentence the way the other
+// options do ("in the all day", "served both"), so they get their own
+// phrasing rather than a bare .toLowerCase().
+function whenPhrase(when: string): string {
+  return when === "All day" ? "throughout the day" : `in the ${when.toLowerCase()}`;
+}
+
+function tempPhrase(temperature: string): string {
+  return temperature === "Both" ? "hot or iced" : temperature.toLowerCase();
+}
+
+// The result is keyed off Q5 (what they want from their tea), with the
+// blurb worked back around their earlier answers so it reads as a genuine
+// match rather than the same screen for everyone. Each blurb describes why
+// the blend suits their stated routine -- it doesn't claim an outcome.
+const results: Record<string, { name: string; blurb: (a: Answers) => string }> = {
+  Energy: {
+    name: "The Morning Lift Blend",
+    blurb: (a) =>
+      `You reach for tea ${whenPhrase(a.when)} and want something with a bit of lift. A brighter ${a.favourite.toLowerCase()} blend, ${tempPhrase(a.temperature)}, fits that best.`,
+  },
+  Calm: {
+    name: "The Evening Calm Blend",
+    blurb: (a) =>
+      `You're after the quiet part of the day. A softer, caffeine-light herbal blend — ${tempPhrase(a.temperature)}, the way you like it — suits drinking it ${whenPhrase(a.when)}.`,
+  },
+  "Feel lighter": {
+    name: "The Everyday Light Blend",
+    blurb: (a) =>
+      `You want something that sits well and doesn't weigh you down. A gentle ${a.favourite.toLowerCase()} blend you can drink ${whenPhrase(a.when)}, ${tempPhrase(a.temperature)}, is the easiest place to start.`,
+  },
+  "All of it": {
+    name: "The Everyday All-Rounder",
+    blurb: (a) =>
+      `You're not after one single thing — you want a tea that does a bit of everything. A balanced ${a.favourite.toLowerCase()} blend, ${tempPhrase(a.temperature)}, covers the most ground, and it's an easy one to come back to ${whenPhrase(a.when)}.`,
+  },
+};
+
 function ProgressBar({ step }: { step: number }) {
   return (
     <div className="flex gap-2 w-full max-w-md mx-auto mb-8">
@@ -85,6 +141,9 @@ export default function TeaQuiz() {
   }
 
   if (done) {
+    const picked = toAnswers(answers);
+    const result = results[picked.goal] ?? results["All of it"];
+
     return (
       <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center">
@@ -99,13 +158,11 @@ export default function TeaQuiz() {
           </p>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-5">
-            The All-Day Herbal Blend
+            {result.name}
           </h1>
 
           <p className="text-foreground/70 text-xl leading-relaxed mb-8">
-            Based on your answers, a gentle everyday herbal blend looks like the
-            best fit — something you can drink morning or afternoon without it
-            taking over your routine.
+            {result.blurb(picked)}
           </p>
 
           <a href={BUY_URL} target="_blank" rel="nofollow sponsored" className="block">
