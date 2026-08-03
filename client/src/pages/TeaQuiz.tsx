@@ -9,33 +9,35 @@
  * states what any product does or treats.
  *
  * Rendered standalone, without the site Header/Footer: the result screen
- * is attributed to "Stacey" to stay continuous with the ad creative and
- * the video it hands off to, so the Miranda branding is deliberately
- * absent here. The rest of the site (including the recipe article) is
- * still Miranda's.
+ * is attributed to "Stacey" to stay continuous with the ad creative, so
+ * the Miranda branding is deliberately absent here. The rest of the site
+ * (including the recipe article) is still Miranda's.
  *
- * The result screen gates the video CTA behind an email capture (POST
- * /api/quiz-lead, stored in Redis -- see api/_lib/keys.ts). If that save
- * fails for any reason, the visitor still proceeds to the video rather
- * than getting stuck behind a broken backend.
+ * Story runs start to end: the intro is Stacey's grandmother-taught-tea
+ * narrative (matches the "I pour vinegar in my tea" ad creative -- the
+ * grandmother's version included vinegar too), the result frames the
+ * match as "the version she'd make you," and email capture is framed as
+ * Stacey sending her grandmother's recipe personally.
  *
- * The video CTA points at /review/all-day-slimming-tea/buy, the
- * server-side redirect in middleware.ts, so the raw affiliate URL never
- * ships in the client bundle and promoter attribution (cookie -> &tid=)
- * keeps working. Reach this page via /quiz (see SHORTCUTS in
- * middleware.ts) to have the click logged and the ref cookie set.
+ * IMPORTANT: after email submit, this page shows a "check your inbox"
+ * confirmation only -- there is no on-page link to the offer anymore (the
+ * previous "Watch The Video" button pointing at
+ * /review/all-day-slimming-tea/buy has been removed, per instruction not
+ * to show it once someone has left their email). That means this funnel
+ * currently has NO path to the affiliate offer at all until outbound
+ * email sending is wired up -- the email is captured (POST
+ * /api/quiz-lead, stored in Redis, see api/_lib/keys.ts) but nothing is
+ * sent yet.
  */
 
 import { useEffect, useState } from "react";
-import { Loader2, Mail, PlayCircle } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Brief pause between the last answer and the result. Cutting straight
 // from a tap to the result screen reads as a jump-cut; a moment of
 // "working on it" makes the result feel like it was arrived at.
 const REVEAL_DELAY_MS = 2200;
-
-const BUY_URL = "/review/all-day-slimming-tea/buy";
 
 type Question = {
   image: string;
@@ -138,10 +140,11 @@ function tempPhrase(temperature: string): string {
   return temperature === "Both" ? "hot or iced" : temperature.toLowerCase();
 }
 
-// The result is keyed off Q5 (what they want from their tea), with the
-// blurb worked back around their earlier answers so it reads as a genuine
-// match rather than the same screen for everyone. Each blurb describes why
-// the blend suits their stated routine -- it doesn't claim an outcome.
+// The result is keyed off the last question (what they want from their
+// tea), with the blurb worked back around their earlier answers so it
+// reads as a genuine match rather than the same screen for everyone. Each
+// blurb describes why the blend suits their stated routine -- it doesn't
+// claim an outcome.
 const results: Record<string, { name: string; blurb: (a: Answers) => string }> = {
   Energy: {
     name: "The Morning Lift Blend",
@@ -171,8 +174,8 @@ function ProgressBar({ step }: { step: number }) {
       {questions.map((_, i) => (
         <div
           key={i}
-          className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
-            i <= step ? "bg-primary" : "bg-primary/15"
+          className={`h-2.5 flex-1 rounded-full transition-colors duration-300 ${
+            i <= step ? "bg-amber-800" : "bg-amber-800/15"
           }`}
         />
       ))}
@@ -202,9 +205,9 @@ export default function TeaQuiz() {
     setStep((s) => s + 1);
   }
 
-  // Never leave a real prospect stuck behind a broken backend: if the save
-  // fails, still let them through to the video. The try/catch only
-  // determines whether we logged the lead, not whether they proceed.
+  // Save is best-effort: a failed write still marks the email as
+  // submitted, since the point is the visitor experience (confirmation
+  // screen), not blocking on Redis being reachable.
   async function submitEmail(e: React.FormEvent, picked: Answers, resultName: string) {
     e.preventDefault();
     setSubmittingEmail(true);
@@ -222,75 +225,58 @@ export default function TeaQuiz() {
     }
   }
 
-  // Intro carries the same face and the same line as the ad creative, so
-  // the page a visitor lands on matches what they just tapped, and it
-  // frames the quiz as the route to the answer rather than a detour
-  // around it.
+  // Intro carries the same face as the ad creative and opens with the
+  // same line ("I pour vinegar in my tea"), then continues into the
+  // grandmother story -- the vinegar is hers, not a random habit.
   if (!started) {
     return (
-      <div className="min-h-[100dvh] bg-background px-6 py-12">
+      <div className="min-h-[100dvh] bg-[#FBF4E8] px-6 py-12">
         <div className="w-full max-w-md mx-auto">
           <img
             src="/images/tea/stacey.jpg"
             alt="Stacey with a cup of tea"
-            className="w-44 h-44 rounded-full object-cover shadow-xl mx-auto mb-8"
+            className="w-44 h-44 rounded-full object-cover shadow-2xl ring-4 ring-white mx-auto mb-8"
           />
 
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-6 text-center">
-            Hi, I'm Stacey
+          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-6 text-center">
+            My grandmother never followed diets.
           </h1>
 
-          <div className="space-y-5 text-foreground/80 text-xl leading-relaxed">
+          <div className="space-y-5 text-neutral-800 text-2xl leading-relaxed">
             <p>
-              I'm 51 — and every single morning, I put a splash of apple cider
-              vinegar in my tea.
+              She just made tea — a different version depending on how I
+              looked or felt that morning. Some days lighter. Some days
+              stronger. Sometimes with a small splash of vinegar.
             </p>
 
             <p>
-              I know exactly how that sounds. The first time a friend told me
-              she did it, I pulled a face. Vinegar belongs on a salad, not in a
-              teacup. But she'd been doing it for years, and she was stubborn
-              about it, so eventually I stopped arguing and tried it.
+              When I was younger I didn't pay much attention. In my 40s, I
+              came back to her way.
             </p>
 
             <p>
-              The honest truth? That first cup was awful. I used far too much,
-              didn't balance it with anything, and it tasted like a mistake. It
-              took me a few weeks of fiddling — a little lemon, some fresh mint,
-              the right tea underneath it — before I landed on something I
-              actually looked forward to.
+              I stopped forcing strict routines and started making tea the
+              way she taught me — according to what I actually needed that
+              day, not a plan written for someone else.
             </p>
 
             <p>
-              That was four years ago, and I haven't skipped a morning since.
-              Not because it's magic. Because it's <em>mine</em> — ten quiet
-              minutes before the house wakes up, a warm cup in my hands,
-              something that tastes good and feels like looking after myself.
+              It became the one thing I never quit. I still make it most
+              mornings.
             </p>
 
-            <p>
-              People ask me for the recipe constantly. Here's the thing though:
-              there isn't <em>one</em> recipe. What works depends on when you
-              drink your tea, whether you take it hot or iced, whether you want
-              something bright in the morning or something calmer at night. My
-              blend is built around my routine. Yours should be built around
-              yours.
-            </p>
-
-            <p className="font-semibold text-foreground">
-              So before I show you what's in mine, let me ask you a few quick
-              questions about how you drink tea. Takes about a minute — and at
-              the end I'll show you the blend that actually fits you, and
-              explain why the vinegar is in there.
+            <p className="font-semibold text-neutral-900">
+              I can show you the version that fits you. It'll take about a
+              minute — just a few quick questions about how you drink tea.
             </p>
           </div>
 
           <Button
             size="lg"
             onClick={() => setStarted(true)}
-            className="w-full mt-10 bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+            className="w-full mt-10 bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-[0_10px_0_0_#5C3A1E] hover:shadow-[0_6px_0_0_#5C3A1E] hover:translate-y-1 active:shadow-none active:translate-y-2.5 transition-all border-2 border-amber-950"
           >
-            Take The Quiz →
+            Find My Tea Version →
           </Button>
         </div>
       </div>
@@ -299,12 +285,12 @@ export default function TeaQuiz() {
 
   if (done && !revealed) {
     return (
-      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6">
-        <Loader2 className="w-16 h-16 text-primary animate-spin mb-8" />
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground text-center leading-tight">
+      <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6">
+        <Loader2 className="w-16 h-16 text-amber-800 animate-spin mb-8" />
+        <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 text-center leading-tight">
           Preparing your tea…
         </h1>
-        <p className="text-foreground/60 text-lg text-center mt-4">
+        <p className="text-neutral-600 text-lg text-center mt-4">
           Matching your answers to the right blend
         </p>
       </div>
@@ -316,39 +302,40 @@ export default function TeaQuiz() {
     const result = results[picked.goal] ?? results["All of it"];
 
     return (
-      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6 py-12">
+      <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center">
           <img
             src="/images/tea/hero_iced_tea.jpg"
             alt="Herbal iced tea with mint and lemon"
-            className="w-full rounded-3xl shadow-xl mb-8"
+            className="w-full rounded-3xl shadow-2xl ring-4 ring-white mb-8"
           />
 
-          <p className="text-primary font-bold text-base uppercase tracking-widest mb-4">
-            Based on your answers
+          <p className="text-amber-800 font-bold text-base uppercase tracking-widest mb-4">
+            Your grandmother-style match
           </p>
 
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-5">
-            Stacey's Secret Tea Recipe
+          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-5">
+            The Tea She Would Make You
           </h1>
 
-          <p className="text-primary font-bold text-xl mb-4">
+          <p className="text-amber-800 font-bold text-xl mb-4">
             Your match: {result.name}
           </p>
 
-          <p className="text-foreground/70 text-xl leading-relaxed mb-3">
+          <p className="text-neutral-800 text-xl leading-relaxed mb-3">
             {result.blurb(picked)}
           </p>
 
-          <p className="text-foreground/70 text-xl leading-relaxed mb-8">
-            But the vinegar is only one part of it. What matters just as much
-            is the tea underneath — and that's the part most people get wrong.
+          <p className="text-neutral-800 text-xl leading-relaxed mb-8">
+            This is close to the pattern she had — a version built around how
+            you actually feel, not a strict routine.
           </p>
 
           {!emailSubmitted ? (
             <form onSubmit={(e) => submitEmail(e, picked, result.name)} className="space-y-4">
-              <p className="text-foreground/70 text-lg leading-relaxed mb-2">
-                Where should I send your full recipe?
+              <p className="text-neutral-800 text-lg leading-relaxed mb-2 font-medium">
+                I'll send you my grandmother's full recipe — the exact way
+                she taught me.
               </p>
               <input
                 type="email"
@@ -356,37 +343,27 @@ export default function TeaQuiz() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email"
-                className="w-full text-center text-xl px-6 py-5 rounded-2xl border-2 border-border bg-card text-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full text-center text-2xl px-6 py-6 rounded-2xl border-[3px] border-neutral-800 bg-white text-neutral-900 shadow-[0_6px_0_0_#171412] focus:outline-none focus:border-amber-800 focus:shadow-[0_6px_0_0_#92400E] transition-all placeholder:text-neutral-400"
               />
               <Button
                 type="submit"
                 size="lg"
                 disabled={submittingEmail}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+                className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-[0_10px_0_0_#5C3A1E] hover:shadow-[0_6px_0_0_#5C3A1E] hover:translate-y-1 active:shadow-none active:translate-y-2.5 transition-all border-2 border-amber-950 disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 <Mail className="!w-7 !h-7 mr-1" />
-                {submittingEmail ? "Sending…" : "Send Me My Recipe"}
+                {submittingEmail ? "Sending…" : "Send Me Grandma's Recipe"}
               </Button>
-              <p className="text-sm text-foreground/50">
-                Just the recipe. No spam.
-              </p>
+              <p className="text-sm text-neutral-500">Just the recipe. No spam.</p>
             </form>
           ) : (
-            <>
-              <p className="text-foreground/70 text-lg leading-relaxed mb-6">
-                On its way. Stacey walks through the whole thing in the video
-                below.
+            <div className="bg-white border-[3px] border-neutral-800 rounded-2xl p-8 shadow-[0_6px_0_0_#171412]">
+              <h2 className="text-3xl font-bold text-neutral-900 mb-3">Thank you.</h2>
+              <p className="text-neutral-800 text-xl leading-relaxed">
+                Check your inbox — I'm sending over my grandmother's recipe,
+                along with the rest of the story.
               </p>
-              <a href={BUY_URL} target="_blank" rel="nofollow sponsored" className="block">
-                <Button
-                  size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-lg hover:shadow-xl transition-all"
-                >
-                  <PlayCircle className="!w-8 !h-8 mr-1" />
-                  Watch The Video
-                </Button>
-              </a>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -396,21 +373,21 @@ export default function TeaQuiz() {
   const q = questions[step];
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6 py-10">
+    <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-10">
       <div className="w-full max-w-md">
         <ProgressBar step={step} />
 
         <img
           src={q.image}
           alt=""
-          className="w-full h-52 sm:h-60 object-cover rounded-3xl shadow-lg mb-8"
+          className="w-full h-52 sm:h-60 object-cover rounded-3xl shadow-2xl ring-4 ring-white mb-8"
         />
 
-        <p className="text-primary font-bold text-sm uppercase tracking-widest mb-3 text-center">
+        <p className="text-amber-800 font-bold text-sm uppercase tracking-widest mb-3 text-center">
           {q.eyebrow}
         </p>
 
-        <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-8 text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-8 text-center">
           {q.question}
         </h1>
 
@@ -419,7 +396,7 @@ export default function TeaQuiz() {
             <button
               key={option}
               onClick={() => choose(option)}
-              className="w-full text-center text-2xl font-semibold text-foreground bg-card border-2 border-border rounded-2xl py-6 px-6 hover:border-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
+              className="w-full text-center text-2xl font-bold text-neutral-900 bg-white border-[3px] border-neutral-800 rounded-2xl py-6 px-6 shadow-[0_6px_0_0_#171412] hover:border-amber-800 hover:text-amber-800 hover:shadow-[0_6px_0_0_#92400E] active:shadow-none active:translate-y-1.5 transition-all"
             >
               {option}
             </button>
