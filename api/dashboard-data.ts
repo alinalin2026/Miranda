@@ -26,6 +26,8 @@ interface ProductRow {
 interface QuizLead {
   ts: number;
   email: string;
+  name?: string;
+  memory?: string;
   answers: Record<string, string>;
   result: string;
   source: string;

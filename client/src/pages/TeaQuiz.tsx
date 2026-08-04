@@ -2,9 +2,19 @@
  * Tea Match Quiz
  * Route: /tea-quiz
  *
- * Flow: personal intro (grandmother story) -> 9 taste/habit questions ->
- * "preparing your tea" spinner -> result (matched blend + email capture)
- * -> PAYOFF screen (handwritten recipe card + the vinegar secret).
+ * Flow: personal intro (grandmother story) -> first-name card -> 9
+ * taste/habit questions -> optional family-memory card -> "preparing
+ * your tea" spinner -> result (matched blend + email capture) -> PAYOFF
+ * screen (personal note + handwritten recipe card + the vinegar secret).
+ *
+ * Two live backend touches on completion, both best-effort:
+ * - POST /api/quiz-count increments a REAL per-day completion counter;
+ *   the result screen says "yours is tea #N made today" (never faked --
+ *   their own completion is counted, so N is always >= 1).
+ * - POST /api/quiz-note asks Claude Haiku for a short personal note in
+ *   Stacey's voice from their answers + shared memory. Renders as a
+ *   "Dear <name>" letter on the payoff. If the endpoint has no API key
+ *   or fails, the payoff renders without it, unchanged.
  *
  * Why the payoff is on-page, not just emailed: the ad promises "why the
  * vinegar," so if someone completes the quiz and never learns it, they
@@ -30,7 +40,7 @@
  * the video/offer is delivered later by email once sending is wired up.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -180,7 +190,7 @@ function ProgressBar({ step }: { step: number }) {
 // Handwritten recipe card, lightly personalised to their answers. Kept
 // deliberately human: a natural crossed-out correction, a signature, a
 // slight tilt. The vinegar line is the payoff the ad promised.
-function RecipeCard({ a }: { a: Answers }) {
+function RecipeCard({ a, name }: { a: Answers; name?: string }) {
   const teaWord = a.favourite === "Herbal" ? "herbal" : a.favourite.toLowerCase();
   const served = a.temperature === "Iced" ? "over ice" : a.temperature === "Both" ? "hot or over ice" : "hot";
 
@@ -201,7 +211,7 @@ function RecipeCard({ a }: { a: Answers }) {
         Nana's Morning Tea
       </p>
       <p style={{ fontFamily: HANDWRITING }} className="text-2xl text-neutral-600 text-center mb-6">
-        (the way she taught me)
+        {name ? `(the way she taught me — for ${name})` : "(the way she taught me)"}
       </p>
 
       <ul style={{ fontFamily: HANDWRITING }} className="text-3xl leading-[1.5] space-y-1">
@@ -236,19 +246,53 @@ function RecipeCard({ a }: { a: Answers }) {
 
 export default function TeaQuiz() {
   const [started, setStarted] = useState(false);
+  const [name, setName] = useState("");
+  const [nameDone, setNameDone] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [memory, setMemory] = useState("");
+  const [memoryDone, setMemoryDone] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [submittingEmail, setSubmittingEmail] = useState(false);
+  const [todayCount, setTodayCount] = useState<number | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
-  const done = step >= questions.length;
+  const questionsDone = step >= questions.length;
+  const done = questionsDone && memoryDone;
+  const completionFired = useRef(false);
 
   useEffect(() => {
     if (!done) return;
     const timer = setTimeout(() => setRevealed(true), REVEAL_DELAY_MS);
     return () => clearTimeout(timer);
+  }, [done]);
+
+  // On completion: bump the real daily counter and ask for the personal
+  // note. Both best-effort -- the page never waits on either.
+  useEffect(() => {
+    if (!done || completionFired.current) return;
+    completionFired.current = true;
+
+    fetch("/api/quiz-count", { method: "POST" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.today === "number") setTodayCount(data.today);
+      })
+      .catch(() => {});
+
+    fetch("/api/quiz-note", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name, memory, answers: toAnswers(answers) }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.note === "string" && data.note) setNote(data.note);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
   function choose(option: string) {
@@ -263,7 +307,7 @@ export default function TeaQuiz() {
       await fetch("/api/quiz-lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, answers: picked, result: resultName, source: "quiz" }),
+        body: JSON.stringify({ email, name, memory, answers: picked, result: resultName, source: "quiz" }),
       });
     } catch (err) {
       console.error("Failed to save quiz lead", err);
@@ -337,6 +381,114 @@ export default function TeaQuiz() {
     );
   }
 
+  // ── First name (before the questions, so the whole quiz can talk to
+  // them by name -- skippable, never a wall) ──
+  if (!nameDone) {
+    return (
+      <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md text-center">
+          <p className="text-amber-800 font-bold text-base uppercase tracking-widest mb-4">
+            Before we start
+          </p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-6">
+            What should I call you?
+          </h1>
+          <p className="text-neutral-700 text-xl leading-relaxed mb-8">
+            Nana never made tea for a stranger — first names only in her
+            kitchen.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setNameDone(true);
+            }}
+            className="space-y-4"
+          >
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={40}
+              placeholder="Your first name"
+              autoFocus
+              className="w-full text-center text-2xl px-6 py-6 rounded-2xl border-2 border-neutral-800 bg-white text-neutral-900 shadow-md focus:outline-none focus:border-amber-800 focus:shadow-lg transition-all placeholder:text-neutral-400"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950"
+            >
+              That's me →
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setName("");
+                setNameDone(true);
+              }}
+              className="text-neutral-500 text-lg underline underline-offset-4"
+            >
+              I'd rather not say
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Family memory (after the questions, optional) ──
+  if (questionsDone && !memoryDone) {
+    return (
+      <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md text-center">
+          <p className="text-amber-800 font-bold text-base uppercase tracking-widest mb-4">
+            One last thing
+          </p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-6">
+            Did anyone in your family have a little ritual like Nana's?
+          </h1>
+          <p className="text-neutral-700 text-xl leading-relaxed mb-8">
+            A grandmother's kettle, a father's mug, a certain cup on
+            Sundays… tell me in a line. Or skip it — Nana wouldn't pry.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setMemoryDone(true);
+            }}
+            className="space-y-4"
+          >
+            <textarea
+              value={memory}
+              onChange={(e) => setMemory(e.target.value)}
+              maxLength={280}
+              rows={3}
+              placeholder="My grandmother always…"
+              className="w-full text-xl px-6 py-5 rounded-2xl border-2 border-neutral-800 bg-white text-neutral-900 shadow-md focus:outline-none focus:border-amber-800 focus:shadow-lg transition-all placeholder:text-neutral-400 resize-none"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950"
+            >
+              Make my tea →
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setMemory("");
+                setMemoryDone(true);
+              }}
+              className="text-neutral-500 text-lg underline underline-offset-4"
+            >
+              Skip this
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   // ── Spinner ──
   if (done && !revealed) {
     return (
@@ -370,7 +522,27 @@ export default function TeaQuiz() {
               Here it is, in my own hand.
             </h1>
 
-            <RecipeCard a={picked} />
+            {note && (
+              <div
+                className="bg-[#FFFDF5] rounded-sm px-7 py-7 mb-8 text-neutral-800 shadow-xl"
+                style={{ transform: "rotate(0.8deg)" }}
+              >
+                <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mb-3">
+                  Dear {name || "friend"},
+                </p>
+                <p
+                  style={{ fontFamily: HANDWRITING }}
+                  className="text-[1.7rem] leading-[1.5] whitespace-pre-line"
+                >
+                  {note}
+                </p>
+                <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-right mt-4 text-neutral-700">
+                  — Stacey
+                </p>
+              </div>
+            )}
+
+            <RecipeCard a={picked} name={name} />
 
             <div className="mt-12">
               <h2 className="text-3xl font-bold text-neutral-900 mb-4">
@@ -434,6 +606,12 @@ export default function TeaQuiz() {
           <p className="text-amber-800 font-bold text-xl mb-4">
             Your match: {result.name}
           </p>
+
+          {typeof todayCount === "number" && todayCount > 0 && (
+            <p className="text-neutral-600 text-lg mb-4">
+              ☕ Yours is tea <strong>#{todayCount}</strong> made today
+            </p>
+          )}
 
           <p className="text-neutral-800 text-xl leading-relaxed mb-3">
             {result.blurb(picked)}

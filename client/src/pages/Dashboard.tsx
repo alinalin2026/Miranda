@@ -26,6 +26,8 @@ interface LogEntry {
 interface QuizLead {
   ts: number;
   email: string;
+  name?: string;
+  memory?: string;
   answers: Record<string, string>;
   result: string;
   source: string;
@@ -279,10 +281,14 @@ export default function Dashboard() {
               data.quizLeads.map((lead, i) => (
                 <div key={i} className="border-b border-gray-100 pb-2">
                   <div className="flex items-center justify-between gap-4 text-sm">
-                    <span className="font-medium text-gray-900">{lead.email}</span>
+                    <span className="font-medium text-gray-900">
+                      {lead.email}
+                      {lead.name ? <span className="text-gray-500 font-normal"> ({lead.name})</span> : null}
+                    </span>
                     <span className="text-gray-500">{lead.result}</span>
                     <span className="text-gray-400 whitespace-nowrap">{new Date(lead.ts).toLocaleString()}</span>
                   </div>
+                  {lead.memory && <p className="text-xs text-gray-400 truncate mt-0.5">"{lead.memory}"</p>}
                 </div>
               ))
             ) : (
