@@ -274,7 +274,7 @@ export default function TeaQuiz() {
           <Button
             size="lg"
             onClick={() => setStarted(true)}
-            className="w-full mt-10 bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-[0_10px_0_0_#5C3A1E] hover:shadow-[0_6px_0_0_#5C3A1E] hover:translate-y-1 active:shadow-none active:translate-y-2.5 transition-all border-2 border-amber-950"
+            className="w-full mt-10 bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950"
           >
             Find My Tea Version →
           </Button>
@@ -333,9 +333,8 @@ export default function TeaQuiz() {
 
           {!emailSubmitted ? (
             <form onSubmit={(e) => submitEmail(e, picked, result.name)} className="space-y-4">
-              <p className="text-neutral-800 text-lg leading-relaxed mb-2 font-medium">
-                I'll send you my grandmother's full recipe — the exact way
-                she taught me.
+              <p className="text-black text-xl leading-relaxed mb-2 font-bold">
+                Enter your email to get the recipe →
               </p>
               <input
                 type="email"
@@ -343,13 +342,13 @@ export default function TeaQuiz() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email"
-                className="w-full text-center text-2xl px-6 py-6 rounded-2xl border-[3px] border-neutral-800 bg-white text-neutral-900 shadow-[0_6px_0_0_#171412] focus:outline-none focus:border-amber-800 focus:shadow-[0_6px_0_0_#92400E] transition-all placeholder:text-neutral-400"
+                className="w-full text-center text-2xl px-6 py-6 rounded-2xl border-2 border-neutral-800 bg-white text-neutral-900 shadow-md focus:outline-none focus:border-amber-800 focus:shadow-lg transition-all placeholder:text-neutral-400"
               />
               <Button
                 type="submit"
                 size="lg"
                 disabled={submittingEmail}
-                className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-[0_10px_0_0_#5C3A1E] hover:shadow-[0_6px_0_0_#5C3A1E] hover:translate-y-1 active:shadow-none active:translate-y-2.5 transition-all border-2 border-amber-950 disabled:opacity-60 disabled:hover:translate-y-0"
+                className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950 disabled:opacity-60"
               >
                 <Mail className="!w-7 !h-7 mr-1" />
                 {submittingEmail ? "Sending…" : "Send Me Grandma's Recipe"}
@@ -357,7 +356,7 @@ export default function TeaQuiz() {
               <p className="text-sm text-neutral-500">Just the recipe. No spam.</p>
             </form>
           ) : (
-            <div className="bg-white border-[3px] border-neutral-800 rounded-2xl p-8 shadow-[0_6px_0_0_#171412]">
+            <div className="bg-white border-2 border-neutral-800 rounded-2xl p-8 shadow-lg">
               <h2 className="text-3xl font-bold text-neutral-900 mb-3">Thank you.</h2>
               <p className="text-neutral-800 text-xl leading-relaxed">
                 Check your inbox — I'm sending over my grandmother's recipe,
@@ -396,7 +395,7 @@ export default function TeaQuiz() {
             <button
               key={option}
               onClick={() => choose(option)}
-              className="w-full text-center text-2xl font-bold text-neutral-900 bg-white border-[3px] border-neutral-800 rounded-2xl py-6 px-6 shadow-[0_6px_0_0_#171412] hover:border-amber-800 hover:text-amber-800 hover:shadow-[0_6px_0_0_#92400E] active:shadow-none active:translate-y-1.5 transition-all"
+              className="w-full text-center text-2xl font-bold text-neutral-900 bg-white border-2 border-neutral-800 rounded-2xl py-6 px-6 shadow-md hover:border-amber-800 hover:text-amber-800 hover:shadow-lg active:scale-[0.98] transition-all"
             >
               {option}
             </button>
