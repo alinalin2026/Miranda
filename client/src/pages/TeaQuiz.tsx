@@ -58,6 +58,11 @@ import { Button } from "@/components/ui/button";
 // it" makes the result feel arrived at.
 const REVEAL_DELAY_MS = 2200;
 
+// Beat between submitting the email and the recipe appearing. Long
+// enough to make "I'm writing yours out now" land, short enough that it
+// never feels like a wait.
+const INK_DRY_MS = 2000;
+
 const HANDWRITING = "'Caveat', cursive";
 
 type Question = {
@@ -69,7 +74,7 @@ type Question = {
 
 const questions: Question[] = [
   {
-    image: "/images/tea/quiz/q1_herbs.jpg",
+    image: "/images/tea/quiz/q1_plants.jpg",
     eyebrow: "Question 1 of 10",
     question: "Do you believe in the power of plants?",
     options: ["Absolutely", "Somewhat", "I'm curious"],
@@ -79,55 +84,55 @@ const questions: Question[] = [
     // symptoms or body -- "how many diets have you started" is something
     // she knows about her own history, so it segments hard for weight
     // intent without the page asserting anything about her.
-    image: "/images/tea/quiz/q2_tea.jpg",
+    image: "/images/tea/quiz/q2_diets.jpg",
     eyebrow: "Question 2 of 10",
     question: "How many diets have you started over the years?",
     options: ["More than I can count", "A handful", "One or two", "None, really"],
   },
   {
-    image: "/images/tea/quiz/q2_tea.jpg",
+    image: "/images/tea/quiz/q3_cups.jpg",
     eyebrow: "Question 3 of 10",
     question: "How many cups of tea do you drink a day?",
     options: ["1", "2-3", "4+", "I want to drink more"],
   },
   {
-    image: "/images/tea/quiz/q3_spread.jpg",
+    image: "/images/tea/quiz/q4_tea.jpg",
     eyebrow: "Question 4 of 10",
     question: "What's your favourite tea?",
     options: ["Green", "Herbal", "Black", "Mint"],
   },
   {
-    image: "/images/tea/quiz/q4_iced.jpg",
+    image: "/images/tea/quiz/q5_flavours.jpg",
     eyebrow: "Question 5 of 10",
     question: "What flavours do you enjoy most?",
     options: ["Fruity", "Sour", "Sweet", "Earthy"],
   },
   {
-    image: "/images/tea/quiz/q5_glass.jpg",
+    image: "/images/tea/quiz/q6_when.jpg",
     eyebrow: "Question 6 of 10",
     question: "When do you drink your tea?",
     options: ["Morning", "Afternoon", "Evening", "All day"],
   },
   {
-    image: "/images/tea/glass_closeup.jpg",
+    image: "/images/tea/quiz/q7_temperature.jpg",
     eyebrow: "Question 7 of 10",
     question: "Hot or iced?",
     options: ["Hot", "Iced", "Both"],
   },
   {
-    image: "/images/tea/hero_iced_tea.jpg",
+    image: "/images/tea/quiz/q8_age.jpg",
     eyebrow: "Question 8 of 10",
     question: "What age group are you in?",
     options: ["Under 40", "40s", "50s", "60+"],
   },
   {
-    image: "/images/tea/quiz/q3_spread.jpg",
+    image: "/images/tea/quiz/q9_preparation.jpg",
     eyebrow: "Question 9 of 10",
     question: "How do you take your tea?",
     options: ["Plain", "With honey", "With lemon", "With milk"],
   },
   {
-    image: "/images/tea/quiz/q5_glass.jpg",
+    image: "/images/tea/quiz/q10_goal.jpg",
     eyebrow: "Question 10 of 10",
     question: "What do you want most from your tea?",
     options: ["Energy", "Calm", "Feel lighter", "All of it"],
@@ -277,6 +282,9 @@ export default function TeaQuiz() {
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [submittingEmail, setSubmittingEmail] = useState(false);
+  // Short beat after the email so "I'm still writing it" and the instant
+  // reveal don't contradict each other.
+  const [inkDry, setInkDry] = useState(false);
   const [todayCount, setTodayCount] = useState<number | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
@@ -289,6 +297,12 @@ export default function TeaQuiz() {
     const timer = setTimeout(() => setRevealed(true), REVEAL_DELAY_MS);
     return () => clearTimeout(timer);
   }, [done]);
+
+  useEffect(() => {
+    if (!emailSubmitted) return;
+    const timer = setTimeout(() => setInkDry(true), INK_DRY_MS);
+    return () => clearTimeout(timer);
+  }, [emailSubmitted]);
 
   // On completion: bump the real daily counter and ask for the personal
   // note. Both best-effort -- the page never waits on either.
@@ -471,6 +485,12 @@ export default function TeaQuiz() {
     return (
       <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center">
+          <img
+            src="/images/tea/memory_herbs.jpg"
+            alt=""
+            className="w-full h-48 object-cover rounded-3xl shadow-2xl ring-4 ring-white mb-8"
+          />
+
           <p className="text-amber-800 font-bold text-base uppercase tracking-widest mb-4">
             One last thing
           </p>
@@ -523,9 +543,14 @@ export default function TeaQuiz() {
   if (done && !revealed) {
     return (
       <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6">
-        <Loader2 className="w-16 h-16 text-amber-800 animate-spin mb-8" />
+        <img
+          src="/images/tea/kettle_square.jpg"
+          alt=""
+          className="w-56 h-56 rounded-full object-cover shadow-2xl ring-4 ring-white mb-10"
+        />
+        <Loader2 className="w-12 h-12 text-amber-800 animate-spin mb-6" />
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 text-center leading-tight">
-          Preparing your tea…
+          Putting the kettle on…
         </h1>
         <p className="text-neutral-600 text-lg text-center mt-4">
           Matching your answers to the right blend
@@ -539,6 +564,23 @@ export default function TeaQuiz() {
     const picked = toAnswers(answers);
     const result = results[picked.goal] ?? results["All of it"];
 
+    // The beat that makes the "still writing it" framing land.
+    if (emailSubmitted && !inkDry) {
+      return (
+        <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6">
+          <img
+            src="/images/tea/writing_recipe.jpg"
+            alt=""
+            className="w-64 h-64 rounded-full object-cover shadow-2xl ring-4 ring-white mb-10"
+          />
+          <Loader2 className="w-12 h-12 text-amber-800 animate-spin mb-6" />
+          <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 text-center leading-tight">
+            Just finishing yours…
+          </h1>
+        </div>
+      );
+    }
+
     // PAYOFF: recipe card + the vinegar secret. Shown immediately after
     // email so the visitor always gets what the ad promised.
     if (emailSubmitted) {
@@ -549,7 +591,7 @@ export default function TeaQuiz() {
               Your recipe — {result.name}
             </p>
             <h1 className="text-4xl font-bold text-neutral-900 leading-tight mb-8 text-center">
-              Here it is, in my own hand.
+              Ink's dry. Here it is.
             </h1>
 
             {note && (
@@ -603,8 +645,8 @@ export default function TeaQuiz() {
 
             <div className="mt-10 bg-white/70 border border-amber-800/20 rounded-2xl p-6 text-center">
               <p className="text-neutral-700 text-lg leading-relaxed">
-                I've saved a copy to your inbox too — plus a little more of
-                Nana's story. Keep an eye out for it. ♡
+                I'll send a copy to your inbox as well — plus a little more
+                of Nana's story. Keep an eye out for it. ♡
               </p>
               <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mt-3">
                 — Miranda
@@ -615,13 +657,17 @@ export default function TeaQuiz() {
       );
     }
 
-    // Result + email gate
+    // Result + email ask. The ask is framed as *delivery*, not as a
+    // toll gate: she's told the card is still being written by hand,
+    // which is why an address is needed -- and what she actually
+    // receives IS a handwritten card, so the promise and the payoff are
+    // the same object.
     return (
       <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center">
           <img
-            src="/images/tea/hero_iced_tea.jpg"
-            alt="Herbal iced tea with mint and lemon"
+            src="/images/tea/result_tea.jpg"
+            alt="A glass of tea with mint, honey and lemon"
             className="w-full rounded-3xl shadow-2xl ring-4 ring-white mb-8"
           />
 
@@ -630,7 +676,7 @@ export default function TeaQuiz() {
           </p>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-5">
-            The Tea She Would Make You
+            {name ? `${name}, this is your tea.` : "The Tea She Would Make You"}
           </h1>
 
           <p className="text-amber-800 font-bold text-xl mb-4">
@@ -643,18 +689,30 @@ export default function TeaQuiz() {
             </p>
           )}
 
-          <p className="text-neutral-800 text-xl leading-relaxed mb-3">
+          <p className="text-neutral-800 text-xl leading-relaxed mb-8">
             {result.blurb(picked)}
           </p>
 
+          <img
+            src="/images/tea/writing_recipe.jpg"
+            alt="Miranda writing out a recipe card by hand"
+            className="w-full rounded-3xl shadow-xl ring-4 ring-white mb-6"
+          />
+
+          <h2 className="text-3xl font-bold text-neutral-900 leading-tight mb-4">
+            I'm writing yours out now.
+          </h2>
+
           <p className="text-neutral-800 text-xl leading-relaxed mb-8">
-            I've written out the full recipe by hand — measurements and all
-            — plus the real reason for the splash of vinegar.
+            I do these by hand. It's how Nana gave it to me and it's the
+            only way it feels right. Yours is half on the page already —
+            measurements, the method, and what that splash of vinegar is
+            really for.
           </p>
 
           <form onSubmit={(e) => submitEmail(e, picked, result.name)} className="space-y-4">
             <p className="text-black text-xl leading-relaxed mb-2 font-bold">
-              Enter your email to see the recipe →
+              Where shall I send it?
             </p>
             <input
               type="email"
@@ -671,9 +729,11 @@ export default function TeaQuiz() {
               className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950 disabled:opacity-60"
             >
               <Mail className="!w-7 !h-7 mr-1" />
-              {submittingEmail ? "Getting it ready…" : "Show Me The Recipe"}
+              {submittingEmail ? "Getting it ready…" : "Send Me The Recipe"}
             </Button>
-            <p className="text-sm text-neutral-500">Just the recipe. No spam.</p>
+            <p className="text-sm text-neutral-500">
+              Just the recipe. No spam.
+            </p>
           </form>
         </div>
       </div>

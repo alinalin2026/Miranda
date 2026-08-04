@@ -44,7 +44,7 @@ export default function CostaRicanIcedTea() {
           </div>
 
           <img
-            src="/images/tea/hero_iced_tea.jpg"
+            src="/images/tea/result_tea.jpg"
             alt="Herbal iced tea with mint and lemon"
             className="w-full rounded-2xl shadow-lg mb-8"
           />
@@ -66,7 +66,7 @@ export default function CostaRicanIcedTea() {
             </p>
 
             <img
-              src="/images/tea/glass_closeup.jpg"
+              src="/images/tea/quiz/q7_temperature.jpg"
               alt="Close-up of iced tea with mint and lemon"
               className="w-full rounded-2xl shadow-lg my-8"
             />

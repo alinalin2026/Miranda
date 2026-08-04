@@ -29,7 +29,7 @@ export default function AllDaySlimmingTea() {
       <main className="flex-1 flex items-center justify-center py-16 px-4">
         <div className="w-full max-w-md text-center space-y-6">
           <img
-            src="/images/tea/hero_iced_tea.jpg"
+            src="/images/tea/result_tea.jpg"
             alt="Herbal iced tea with mint and lemon"
             className="w-full rounded-2xl shadow-lg"
           />
