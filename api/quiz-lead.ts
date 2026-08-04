@@ -15,7 +15,14 @@ export default async function handler(request: Request) {
     });
   }
 
-  let body: { email?: string; answers?: Record<string, string>; result?: string; source?: string };
+  let body: {
+    email?: string;
+    name?: string;
+    memory?: string;
+    answers?: Record<string, string>;
+    result?: string;
+    source?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -38,6 +45,8 @@ export default async function handler(request: Request) {
     const entry = JSON.stringify({
       ts: Date.now(),
       email,
+      name: typeof body.name === "string" ? body.name.trim().slice(0, 40) : "",
+      memory: typeof body.memory === "string" ? body.memory.trim().slice(0, 280) : "",
       answers: body.answers ?? {},
       result: body.result ?? "",
       source: body.source ?? "quiz",

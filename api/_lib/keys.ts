@@ -10,6 +10,9 @@ export const keys = {
   quizLeads: `${QUIZ_NS}:leads`,
   // Total quiz emails captured, all-time (the list above is capped).
   quizLeadCount: `${QUIZ_NS}:leads:count`,
+  // Real count of quiz completions per UTC day ("teas made today").
+  // Incremented once per completion; the key expires after ~2 days.
+  quizMadeDay: (day: string) => `${QUIZ_NS}:made:${day}`,
 
   // Per (product, promoter-slug) click count. Any slug value works without
   // pre-registration -- it's just a Redis key, created on first use.
