@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AllDaySlimmingTea from "@/pages/AllDaySlimmingTea";
 import CostaRicanIcedTea from "@/pages/CostaRicanIcedTea";
 import Dashboard from "@/pages/Dashboard";
+import GutterQuiz from "@/pages/GutterQuiz";
 import MellaraMaxReview from "@/pages/MellaraMaxReview";
 import NotFound from "@/pages/NotFound";
 import ProductReview from "@/pages/ProductReview";
@@ -27,6 +28,7 @@ function Router() {
       <Route path={"/review/all-day-slimming-tea"} component={AllDaySlimmingTea} />
       <Route path={"/recipes/costa-rican-iced-tea"} component={CostaRicanIcedTea} />
       <Route path={"/tea-quiz"} component={TeaQuiz} />
+      <Route path={"/gutters"} component={GutterQuiz} />
       <Route path={"/review/:productId"} component={ProductReview} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/404"} component={NotFound} />

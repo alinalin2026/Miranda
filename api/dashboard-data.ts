@@ -70,16 +70,29 @@ export default async function handler(request: Request) {
     );
     productRows.sort((a, b) => b.total - a.total);
 
-    const [totalHits, rawLog, quizLeadCount] = await Promise.all([
-      redis.get<number>(keys.grandTotal),
-      redis.lrange(keys.log, 0, 49),
-      redis.get<number>(keys.quizLeadCount),
-    ]);
+    const today = new Date().toISOString().slice(0, 10);
+    const [totalHits, rawLog, quizLeadCount, hsLeadCount, hsLeadsToday, hsQualifiedToday] =
+      await Promise.all([
+        redis.get<number>(keys.grandTotal),
+        redis.lrange(keys.log, 0, 49),
+        redis.get<number>(keys.quizLeadCount),
+        redis.get<number>(keys.hsLeadCount),
+        redis.get<number>(keys.hsLeadsDay(today)),
+        redis.get<number>(keys.hsQualifiedDay(today)),
+      ]);
 
     const recent = (rawLog as unknown[]).map(parseLogEntry).filter((entry): entry is LogEntry => entry !== null);
 
     return new Response(
-      JSON.stringify({ totalHits: totalHits ?? 0, products: productRows, recent, quizLeadCount: quizLeadCount ?? 0 }),
+      JSON.stringify({
+        totalHits: totalHits ?? 0,
+        products: productRows,
+        recent,
+        quizLeadCount: quizLeadCount ?? 0,
+        hsLeadCount: hsLeadCount ?? 0,
+        hsLeadsToday: hsLeadsToday ?? 0,
+        hsQualifiedToday: hsQualifiedToday ?? 0,
+      }),
       { headers: { "content-type": "application/json", "cache-control": "no-store" } },
     );
   } catch (err) {

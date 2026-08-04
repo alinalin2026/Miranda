@@ -4,6 +4,7 @@
 // key this project writes so the two projects' click data never mixes.
 const NS = "miranda:go";
 const QUIZ_NS = "miranda:quiz";
+const HS_NS = "miranda:hs";
 
 export const keys = {
   // One record per person, keyed by lowercased email -- overwritten on
@@ -17,6 +18,25 @@ export const keys = {
   // Real count of quiz completions per UTC day ("teas made today").
   // Incremented once per completion; the key expires after ~2 days.
   quizMadeDay: (day: string) => `${QUIZ_NS}:made:${day}`,
+
+  // Home-services lead-gen funnel. Unlike the tea quiz (where the payday
+  // is a downstream purchase we never see), here the submitted form IS
+  // the conversion -- so these are stored separately and surfaced with
+  // their own live counters.
+  hsLeads: `${HS_NS}:leads`,
+  hsLeadCount: `${HS_NS}:leads:count`,
+  hsLeadsDay: (day: string) => `${HS_NS}:leads:day:${day}`,
+  // Quiz completions per UTC day -- incremented when someone finishes
+  // the questions, which is what the on-page "N people checked theirs
+  // today" line actually reports. Kept distinct from hsLeadsDay (form
+  // submissions) so the number shown is never a different metric than
+  // the words next to it.
+  hsCompletedDay: (day: string) => `${HS_NS}:completed:day:${day}`,
+  // Qualified vs disqualified split, per UTC day. A renter or a
+  // "not interested" answer still finishes the quiz, but must never be
+  // submitted to a lead buyer -- selling those gets an affiliate account
+  // shut down faster than anything else in this business.
+  hsQualifiedDay: (day: string) => `${HS_NS}:qualified:day:${day}`,
 
   // Per (product, promoter-slug) click count. Any slug value works without
   // pre-registration -- it's just a Redis key, created on first use.
