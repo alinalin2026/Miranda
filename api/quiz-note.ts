@@ -1,5 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 export const config = { runtime: "edge" };
 
 // Writes a short personal note "from Miranda" based on the visitor's quiz
@@ -8,10 +6,18 @@ export const config = { runtime: "edge" };
 // or the call fails, we return { note: null } and the page renders its
 // static payoff exactly as before.
 //
+// Calls the Messages API directly with fetch rather than @anthropic-ai/sdk:
+// the SDK's bundle references node:fs/node:path (unused file-upload code
+// paths), which Vercel's Edge runtime static-analysis rejects outright even
+// though nothing in this handler touches them.
+//
 // The system prompt hard-bans health, weight, and product talk -- the
 // note is only ever about taste, ritual, family, and memory. The
 // visitor-supplied memory text is passed as quoted data, never as
 // instructions.
+
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
 
 const MAX_NAME_LEN = 40;
 const MAX_MEMORY_LEN = 280;
@@ -79,17 +85,29 @@ export default async function handler(request: Request) {
   ].join("\n\n");
 
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 300,
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }],
+    const res = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5",
+        max_tokens: 300,
+        system: SYSTEM,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
+    if (!res.ok) {
+      throw new Error(`Anthropic API ${res.status}: ${await res.text()}`);
+    }
+
+    const data = (await res.json()) as { content: Array<{ type: string; text?: string }> };
     const note =
-      message.content
-        .filter((block): block is Anthropic.TextBlock => block.type === "text")
+      data.content
+        .filter((block) => block.type === "text" && typeof block.text === "string")
         .map((block) => block.text)
         .join("")
         .trim() || null;
