@@ -1,5 +1,7 @@
 import { getRedis } from "./_lib/redis";
 import { keys } from "./_lib/keys";
+import { sendEmail } from "./_lib/resend";
+import { buildRecipeEmail } from "./_lib/email-templates";
 
 export const config = { runtime: "edge" };
 
@@ -40,21 +42,43 @@ export default async function handler(request: Request) {
     });
   }
 
+  const name = typeof body.name === "string" ? body.name.trim().slice(0, 40) : "";
+  const memory = typeof body.memory === "string" ? body.memory.trim().slice(0, 280) : "";
+  const answers = body.answers ?? {};
+  const result = body.result ?? "";
+
+  // Send inline rather than fire-and-forget: this is a plain fetch
+  // handler with no ExecutionContext.waitUntil to keep work alive after
+  // the response returns, so an un-awaited send would just get killed
+  // mid-flight. The quiz page's "ink drying" beat (~2s) already masks
+  // this latency, and sendEmail has its own 8s timeout so a slow Resend
+  // API can't hang the quiz completion.
+  const { subject, html, text } = buildRecipeEmail({ name, answers, resultName: result });
+  const sendResult = await sendEmail({ to: email, subject, html, text });
+
   try {
     const redis = getRedis();
-    const entry = JSON.stringify({
+    const record = {
       ts: Date.now(),
       email,
-      name: typeof body.name === "string" ? body.name.trim().slice(0, 40) : "",
-      memory: typeof body.memory === "string" ? body.memory.trim().slice(0, 280) : "",
-      answers: body.answers ?? {},
-      result: body.result ?? "",
+      name,
+      memory,
+      answers,
+      result,
       source: body.source ?? "quiz",
+      emailSent: sendResult.ok,
+      emailSentAt: sendResult.ok ? Date.now() : null,
+      emailError: sendResult.ok ? null : sendResult.error ?? null,
+    };
+
+    await Promise.all([
+      redis.hset(keys.quizLeadsByEmail, { [email]: JSON.stringify(record) }),
+      redis.incr(keys.quizLeadCount),
+    ]);
+
+    return new Response(JSON.stringify({ ok: true, emailSent: sendResult.ok }), {
+      headers: { "content-type": "application/json" },
     });
-
-    await Promise.all([redis.lpush(keys.quizLeads, entry), redis.ltrim(keys.quizLeads, 0, 999), redis.incr(keys.quizLeadCount)]);
-
-    return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json" } });
   } catch (err) {
     console.error("quiz-lead failed", err);
     const message = err instanceof Error ? err.message : String(err);
