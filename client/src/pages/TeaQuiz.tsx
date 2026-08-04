@@ -671,10 +671,6 @@ export default function TeaQuiz() {
             className="w-full rounded-3xl shadow-2xl ring-4 ring-white mb-8"
           />
 
-          <p className="text-amber-800 font-bold text-base uppercase tracking-widest mb-4">
-            Your grandmother-style match
-          </p>
-
           <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-5">
             {name ? `${name}, this is your tea.` : "The Tea She Would Make You"}
           </h1>
