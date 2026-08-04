@@ -28,6 +28,9 @@ interface DashboardData {
   products: ProductRow[];
   recent: LogEntry[];
   quizLeadCount: number;
+  hsLeadCount: number;
+  hsLeadsToday: number;
+  hsQualifiedToday: number;
 }
 
 interface LeadRecord {
@@ -486,6 +489,24 @@ export default function Dashboard() {
       </header>
 
       <main className="container max-w-5xl mx-auto py-8">
+        {/* Lead-gen is the money metric now -- the submitted form IS the
+            conversion, so today's qualified count is what actually
+            forecasts revenue. Given prominence over click totals. */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-4">
+          <div className="bg-sky-50 border-2 border-sky-200 rounded-xl p-6">
+            <p className="text-sm text-sky-700 mb-1 font-medium">Qualified Leads Today</p>
+            <p className="text-4xl font-bold text-sky-900">{data?.hsQualifiedToday ?? 0}</p>
+            <p className="text-xs text-sky-600 mt-1">homeowners only — the sellable ones</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <p className="text-sm text-gray-500 mb-1">All Leads Today</p>
+            <p className="text-4xl font-bold text-gray-900">{data?.hsLeadsToday ?? 0}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {data?.hsLeadCount ?? 0} all-time
+            </p>
+          </div>
+        </div>
+
         <div className="grid sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <p className="text-sm text-gray-500 mb-1">Total Clicks</p>
