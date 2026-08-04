@@ -2,8 +2,8 @@
  * Tea Match Quiz
  * Route: /tea-quiz
  *
- * Flow: personal intro (grandmother story) -> first-name card -> 9
- * taste/habit questions -> optional family-memory card -> "preparing
+ * Flow: personal intro (dieting-fatigue + grandmother story) -> first-name
+ * card -> 10 questions -> optional family-memory card -> "preparing
  * your tea" spinner -> result (matched blend + email capture) -> PAYOFF
  * screen (personal note + handwritten recipe card + the vinegar secret).
  *
@@ -12,7 +12,7 @@
  *   the result screen says "yours is tea #N made today" (never faked --
  *   their own completion is counted, so N is always >= 1).
  * - POST /api/quiz-note asks Claude Haiku for a short personal note in
- *   Stacey's voice from their answers + shared memory. Renders as a
+ *   Miranda's voice from their answers + shared memory. Renders as a
  *   "Dear <name>" letter on the payoff. If the endpoint has no API key
  *   or fails, the payoff renders without it, unchanged.
  *
@@ -27,11 +27,20 @@
  * charming, and it explains the vinegar purely as taste/tradition. It
  * makes NO health claim, deliberately.
  *
- * Questions are about tastes/habits/preferences only (favourite tea, how
- * they take it, how much they drink) -- never symptoms. Nothing states
- * what any product does or treats.
+ * Questions are about tastes, habits and life experience -- never
+ * symptoms. Q2 ("how many diets have you started") is the one qualifying
+ * question: it segments for weight intent using something she already
+ * knows about her own history, which is very different from asking about
+ * her body or symptoms. Nothing states what any product does or treats.
  *
- * Rendered standalone (no site Header/Footer). Attributed to "Stacey" to
+ * The intro deliberately makes an ANTI-claim ("I'm not going to tell you
+ * a cup of tea changes your body. It doesn't.") The qualifying is done by
+ * self-identification -- a woman with no dieting history won't recognise
+ * herself in the headline and will leave. Copy must stay first-person;
+ * second-person framing ("struggling to lose weight?") would breach
+ * Meta's personal-attributes policy.
+ *
+ * Rendered standalone (no site Header/Footer). Attributed to "Miranda" to
  * stay continuous with the ad creative. Email capture posts to
  * /api/quiz-lead (stored in Redis, see api/_lib/keys.ts); the save is
  * best-effort and never blocks the visitor from reaching the payoff.
@@ -61,55 +70,65 @@ type Question = {
 const questions: Question[] = [
   {
     image: "/images/tea/quiz/q1_herbs.jpg",
-    eyebrow: "Question 1 of 9",
+    eyebrow: "Question 1 of 10",
     question: "Do you believe in the power of plants?",
     options: ["Absolutely", "Somewhat", "I'm curious"],
   },
   {
+    // Qualifying question. Deliberately about life experience, NOT
+    // symptoms or body -- "how many diets have you started" is something
+    // she knows about her own history, so it segments hard for weight
+    // intent without the page asserting anything about her.
     image: "/images/tea/quiz/q2_tea.jpg",
-    eyebrow: "Question 2 of 9",
+    eyebrow: "Question 2 of 10",
+    question: "How many diets have you started over the years?",
+    options: ["More than I can count", "A handful", "One or two", "None, really"],
+  },
+  {
+    image: "/images/tea/quiz/q2_tea.jpg",
+    eyebrow: "Question 3 of 10",
     question: "How many cups of tea do you drink a day?",
     options: ["1", "2-3", "4+", "I want to drink more"],
   },
   {
     image: "/images/tea/quiz/q3_spread.jpg",
-    eyebrow: "Question 3 of 9",
+    eyebrow: "Question 4 of 10",
     question: "What's your favourite tea?",
     options: ["Green", "Herbal", "Black", "Mint"],
   },
   {
     image: "/images/tea/quiz/q4_iced.jpg",
-    eyebrow: "Question 4 of 9",
+    eyebrow: "Question 5 of 10",
     question: "What flavours do you enjoy most?",
     options: ["Fruity", "Sour", "Sweet", "Earthy"],
   },
   {
     image: "/images/tea/quiz/q5_glass.jpg",
-    eyebrow: "Question 5 of 9",
+    eyebrow: "Question 6 of 10",
     question: "When do you drink your tea?",
     options: ["Morning", "Afternoon", "Evening", "All day"],
   },
   {
     image: "/images/tea/glass_closeup.jpg",
-    eyebrow: "Question 6 of 9",
+    eyebrow: "Question 7 of 10",
     question: "Hot or iced?",
     options: ["Hot", "Iced", "Both"],
   },
   {
     image: "/images/tea/hero_iced_tea.jpg",
-    eyebrow: "Question 7 of 9",
+    eyebrow: "Question 8 of 10",
     question: "What age group are you in?",
     options: ["Under 40", "40s", "50s", "60+"],
   },
   {
     image: "/images/tea/quiz/q3_spread.jpg",
-    eyebrow: "Question 8 of 9",
+    eyebrow: "Question 9 of 10",
     question: "How do you take your tea?",
     options: ["Plain", "With honey", "With lemon", "With milk"],
   },
   {
     image: "/images/tea/quiz/q5_glass.jpg",
-    eyebrow: "Question 9 of 9",
+    eyebrow: "Question 10 of 10",
     question: "What do you want most from your tea?",
     options: ["Energy", "Calm", "Feel lighter", "All of it"],
   },
@@ -117,6 +136,7 @@ const questions: Question[] = [
 
 type Answers = {
   plants: string;
+  diets: string;
   cupsPerDay: string;
   favourite: string;
   flavour: string;
@@ -130,14 +150,15 @@ type Answers = {
 function toAnswers(picked: string[]): Answers {
   return {
     plants: picked[0] ?? "Absolutely",
-    cupsPerDay: picked[1] ?? "2-3",
-    favourite: picked[2] ?? "Herbal",
-    flavour: picked[3] ?? "Fruity",
-    when: picked[4] ?? "All day",
-    temperature: picked[5] ?? "Both",
-    ageGroup: picked[6] ?? "50s",
-    preparation: picked[7] ?? "Plain",
-    goal: picked[8] ?? "All of it",
+    diets: picked[1] ?? "A handful",
+    cupsPerDay: picked[2] ?? "2-3",
+    favourite: picked[3] ?? "Herbal",
+    flavour: picked[4] ?? "Fruity",
+    when: picked[5] ?? "All day",
+    temperature: picked[6] ?? "Both",
+    ageGroup: picked[7] ?? "50s",
+    preparation: picked[8] ?? "Plain",
+    goal: picked[9] ?? "All of it",
   };
 }
 
@@ -238,7 +259,7 @@ function RecipeCard({ a, name }: { a: Answers; name?: string }) {
       </p>
 
       <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-right mt-6 text-neutral-700">
-        — made with love, Stacey x
+        — made with love, Miranda x
       </p>
     </div>
   );
@@ -323,23 +344,32 @@ export default function TeaQuiz() {
       <div className="min-h-[100dvh] bg-[#FBF4E8] px-6 py-12">
         <div className="w-full max-w-md mx-auto">
           <img
-            src="/images/tea/stacey.jpg"
-            alt="Stacey with a cup of tea"
+            src="/images/tea/miranda-tea.jpg"
+            alt="Miranda with a cup of tea"
             className="w-44 h-44 rounded-full object-cover shadow-2xl ring-4 ring-white mx-auto mb-8"
           />
 
           <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-6 text-center">
-            My grandmother never followed a single diet.
+            I stopped dieting at 52. This is the one thing I kept.
           </h1>
 
           <div className="space-y-5 text-neutral-800 text-2xl leading-relaxed">
             <p>
-              We just called her Nana. She had a chipped enamel pot that
-              lived on the back of the stove, and most mornings there was
-              tea in it — made a little differently depending on the day.
+              I'm Miranda. Through my thirties and forties I tried all of
+              it — the shakes, the points, the fasting windows, the app
+              that buzzed at me. I'd start on a Monday and be done by
+              Thursday. Then feel bad about it and start again.
             </p>
 
             <p>
+              The only thing that ever stayed wasn't a diet at all. It was
+              something my grandmother did.
+            </p>
+
+            <p>
+              We just called her Nana. She had a chipped enamel pot that
+              lived on the back of the stove, and most mornings there was
+              tea in it — made a little differently depending on the day.
               Some mornings light and green. Some dark and strong. And now
               and then, a small splash of apple cider vinegar that made me
               wrinkle my nose as a girl.
@@ -351,11 +381,11 @@ export default function TeaQuiz() {
             </p>
 
             <p>
-              I forgot about it for years — chasing every plan and rule
-              there was through my 30s. None of them stuck. Then somewhere
-              in my 40s, tired of all of it, I started making tea again. Her
-              way. Not by a rulebook — just by how I actually felt that
-              morning.
+              Now — I'm not going to tell you a cup of tea changes your
+              body. It doesn't. What it changed for me was smaller and
+              duller than that: something warm in my hands at four o'clock
+              instead of standing in front of the cupboard. No Monday. No
+              starting over.
             </p>
 
             <p>
@@ -537,7 +567,7 @@ export default function TeaQuiz() {
                   {note}
                 </p>
                 <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-right mt-4 text-neutral-700">
-                  — Stacey
+                  — Miranda
                 </p>
               </div>
             )}
@@ -577,7 +607,7 @@ export default function TeaQuiz() {
                 Nana's story. Keep an eye out for it. ♡
               </p>
               <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mt-3">
-                — Stacey
+                — Miranda
               </p>
             </div>
           </div>
