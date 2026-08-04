@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ChevronDown, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Mail, RefreshCw, Send, X } from "lucide-react";
 
 interface SlugRow {
   slug: string;
@@ -23,7 +23,14 @@ interface LogEntry {
   userAgent?: string;
 }
 
-interface QuizLead {
+interface DashboardData {
+  totalHits: number;
+  products: ProductRow[];
+  recent: LogEntry[];
+  quizLeadCount: number;
+}
+
+interface LeadRecord {
   ts: number;
   email: string;
   name?: string;
@@ -31,18 +38,16 @@ interface QuizLead {
   answers: Record<string, string>;
   result: string;
   source: string;
+  emailSent: boolean;
+  emailSentAt: number | null;
+  emailError?: string | null;
 }
 
-interface DashboardData {
-  totalHits: number;
-  products: ProductRow[];
-  recent: LogEntry[];
-  quizLeadCount: number;
-  quizLeads: QuizLead[];
-}
+type SendState = "idle" | "sending" | "ok" | "error";
 
 const STORAGE_KEY = "mr_admin_pw";
 const REFRESH_MS = 10000;
+const MAX_BATCH_SEND = 50;
 
 function ProductCard({
   row,
@@ -120,6 +125,248 @@ function ProductCard({
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatusBadge({ lead }: { lead: LeadRecord }) {
+  if (lead.emailSent) {
+    return (
+      <span
+        title={lead.emailSentAt ? new Date(lead.emailSentAt).toLocaleString() : undefined}
+        className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full"
+      >
+        Sent
+      </span>
+    );
+  }
+  if (lead.emailError) {
+    return (
+      <span
+        title={lead.emailError}
+        className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full"
+      >
+        Failed
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+      Not sent
+    </span>
+  );
+}
+
+function LeadsManager({ password }: { password: string }) {
+  const [leads, setLeads] = useState<LeadRecord[] | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<"all" | "sent" | "not-sent">("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [rowState, setRowState] = useState<Record<string, SendState>>({});
+  const [bulkSending, setBulkSending] = useState(false);
+
+  const fetchLeads = useCallback(async () => {
+    if (!password) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/leads", { headers: { "x-admin-password": password } });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Failed to load leads (${res.status})`);
+      }
+      const json = (await res.json()) as { leads: LeadRecord[] };
+      setLeads(json.leads);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load leads");
+    } finally {
+      setLoading(false);
+    }
+  }, [password]);
+
+  useEffect(() => {
+    fetchLeads();
+    const interval = setInterval(fetchLeads, REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [fetchLeads]);
+
+  const filtered = useMemo(() => {
+    if (!leads) return [];
+    if (filter === "sent") return leads.filter((l) => l.emailSent);
+    if (filter === "not-sent") return leads.filter((l) => !l.emailSent);
+    return leads;
+  }, [leads, filter]);
+
+  const counts = useMemo(() => {
+    const sent = leads?.filter((l) => l.emailSent).length ?? 0;
+    const total = leads?.length ?? 0;
+    return { sent, notSent: total - sent, total };
+  }, [leads]);
+
+  function toggleOne(email: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+  }
+
+  function toggleAllVisible() {
+    setSelected((prev) => {
+      const visibleEmails = filtered.map((l) => l.email);
+      const allSelected = visibleEmails.length > 0 && visibleEmails.every((e) => prev.has(e));
+      if (allSelected) {
+        const next = new Set(prev);
+        visibleEmails.forEach((e) => next.delete(e));
+        return next;
+      }
+      return new Set([...Array.from(prev), ...visibleEmails]);
+    });
+  }
+
+  async function sendTo(emails: string[]) {
+    if (emails.length === 0) return;
+    const batch = emails.slice(0, MAX_BATCH_SEND);
+    setRowState((prev) => {
+      const next = { ...prev };
+      batch.forEach((e) => (next[e] = "sending"));
+      return next;
+    });
+    try {
+      const res = await fetch("/api/send-recipe-email", {
+        method: "POST",
+        headers: { "x-admin-password": password, "content-type": "application/json" },
+        body: JSON.stringify({ emails: batch }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error || `Send failed (${res.status})`);
+
+      const results = (body?.results ?? []) as { email: string; ok: boolean; error?: string }[];
+      setRowState((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => (next[r.email] = r.ok ? "ok" : "error"));
+        return next;
+      });
+      await fetchLeads();
+    } catch (err) {
+      setRowState((prev) => {
+        const next = { ...prev };
+        batch.forEach((e) => (next[e] = "error"));
+        return next;
+      });
+      setError(err instanceof Error ? err.message : "Failed to send");
+    }
+  }
+
+  async function sendSelected() {
+    setBulkSending(true);
+    await sendTo(Array.from(selected));
+    setBulkSending(false);
+    setSelected(new Set());
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-8">
+      <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-bold text-gray-900">
+          Quiz Leads{" "}
+          <span className="font-normal text-gray-400 text-sm">
+            ({counts.total} total — {counts.sent} sent, {counts.notSent} not sent)
+          </span>
+        </h2>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+            {(["all", "not-sent", "sent"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 font-medium ${
+                  filter === f ? "bg-primary text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {f === "all" ? "All" : f === "sent" ? "Sent" : "Not sent"}
+              </button>
+            ))}
+          </div>
+          <Button variant="ghost" size="icon" onClick={fetchLeads} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-red-600 px-4 pt-3">{error}</p>}
+
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50">
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={filtered.length > 0 && filtered.every((l) => selected.has(l.email))}
+            onChange={toggleAllVisible}
+            className="rounded"
+          />
+          Select all visible ({filtered.length})
+        </label>
+        <Button
+          size="sm"
+          disabled={selected.size === 0 || bulkSending}
+          onClick={sendSelected}
+          className="bg-amber-800 hover:bg-amber-900 text-white disabled:opacity-50"
+        >
+          <Send className="w-3.5 h-3.5 mr-1.5" />
+          {bulkSending
+            ? "Sending…"
+            : `Send Recipe Email${selected.size ? ` (${Math.min(selected.size, MAX_BATCH_SEND)})` : ""}`}
+        </Button>
+      </div>
+
+      <div className="max-h-[32rem] overflow-y-auto">
+        {filtered.length === 0 ? (
+          <p className="px-4 py-8 text-center text-gray-400">
+            {leads === null ? "Loading…" : "No leads in this view yet"}
+          </p>
+        ) : (
+          filtered.map((lead) => (
+            <div key={lead.email} className="border-b border-gray-100 px-4 py-3 flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={selected.has(lead.email)}
+                onChange={() => toggleOne(lead.email)}
+                className="mt-1 rounded"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium text-gray-900 truncate">
+                    {lead.email}
+                    {lead.name ? <span className="text-gray-500 font-normal"> ({lead.name})</span> : null}
+                  </span>
+                  <span className="text-gray-400 text-xs whitespace-nowrap">
+                    {new Date(lead.ts).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <StatusBadge lead={lead} />
+                  <span className="text-gray-500 text-xs">{lead.result}</span>
+                </div>
+                {lead.memory && <p className="text-xs text-gray-400 truncate mt-1">"{lead.memory}"</p>}
+              </div>
+              <button
+                title={lead.emailSent ? "Resend" : "Send"}
+                disabled={rowState[lead.email] === "sending"}
+                onClick={() => sendTo([lead.email])}
+                className="text-gray-400 hover:text-amber-800 disabled:opacity-50 mt-1"
+              >
+                {rowState[lead.email] === "sending" ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Mail className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -274,28 +521,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8">
-          <h2 className="font-bold text-gray-900 mb-4">Quiz Leads</h2>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {data?.quizLeads.length ? (
-              data.quizLeads.map((lead, i) => (
-                <div key={i} className="border-b border-gray-100 pb-2">
-                  <div className="flex items-center justify-between gap-4 text-sm">
-                    <span className="font-medium text-gray-900">
-                      {lead.email}
-                      {lead.name ? <span className="text-gray-500 font-normal"> ({lead.name})</span> : null}
-                    </span>
-                    <span className="text-gray-500">{lead.result}</span>
-                    <span className="text-gray-400 whitespace-nowrap">{new Date(lead.ts).toLocaleString()}</span>
-                  </div>
-                  {lead.memory && <p className="text-xs text-gray-400 truncate mt-0.5">"{lead.memory}"</p>}
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-400 text-sm">No quiz emails captured yet</p>
-            )}
-          </div>
-        </div>
+        <LeadsManager password={password} />
 
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <h2 className="font-bold text-gray-900 mb-4">Recent Activity</h2>

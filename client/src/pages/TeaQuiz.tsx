@@ -64,6 +64,17 @@ const REVEAL_DELAY_MS = 2200;
 const INK_DRY_MS = 2000;
 
 const HANDWRITING = "'Caveat', cursive";
+// Near-black, warm-toned ink -- sharper and darker than a plain grey/brown,
+// without going pure black (which reads as printed, not written).
+const HAND_INK = "#18120c";
+// Tiny per-line rotation so the handwriting doesn't sit in a perfectly
+// straight block -- real handwriting drifts a fraction of a degree line
+// to line. Cycled deterministically by index, not randomised, so the
+// card looks the same on every render.
+const HAND_TILTS = [-0.6, 0.5, -0.4, 0.6, -0.3, 0.4];
+function handStyle(i: number): React.CSSProperties {
+  return { fontFamily: HANDWRITING, transform: `rotate(${HAND_TILTS[i % HAND_TILTS.length]}deg)` };
+}
 
 type Question = {
   image: string;
@@ -233,37 +244,43 @@ function RecipeCard({ a, name }: { a: Answers; name?: string }) {
       {/* tape */}
       <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-amber-200/70 rotate-1 shadow-sm" />
 
-      <p style={{ fontFamily: HANDWRITING }} className="text-4xl font-bold text-amber-900 text-center leading-none mb-1">
+      <p
+        style={{ fontFamily: HANDWRITING, color: HAND_INK }}
+        className="text-4xl font-bold text-center leading-none mb-1"
+      >
         Nana's Morning Tea
       </p>
       <p style={{ fontFamily: HANDWRITING }} className="text-2xl text-neutral-600 text-center mb-6">
         {name ? `(the way she taught me — for ${name})` : "(the way she taught me)"}
       </p>
 
-      <ul style={{ fontFamily: HANDWRITING }} className="text-3xl leading-[1.5] space-y-1">
-        <li>• 1 cup {teaWord} tea, brewed strong</li>
-        <li>• juice of half a lemon</li>
-        <li>• a few fresh mint leaves, torn</li>
-        <li>
+      <ul className="text-4xl font-semibold leading-[1.45] space-y-2" style={{ color: HAND_INK }}>
+        <li style={handStyle(0)}>• 1 cup {teaWord} tea, brewed strong</li>
+        <li style={handStyle(1)}>• juice of half a lemon</li>
+        <li style={handStyle(2)}>• a few fresh mint leaves, torn</li>
+        <li style={handStyle(3)}>
           • 1{" "}
           <span className="line-through decoration-2 text-neutral-400">teaspon</span> teaspoon
           honey
         </li>
-        <li>• 1 small splash of apple cider vinegar</li>
+        <li style={handStyle(4)}>• 1 small splash of apple cider vinegar</li>
       </ul>
 
-      <div style={{ fontFamily: HANDWRITING }} className="text-3xl leading-[1.5] mt-6 space-y-1">
-        <p>Brew the tea, let it sit 5 min.</p>
-        <p>Stir everything in while it's warm.</p>
-        <p>Serve it {served}. Sip it slow — don't rush.</p>
+      <div className="text-4xl font-semibold leading-[1.45] mt-6 space-y-2" style={{ color: HAND_INK }}>
+        <p style={handStyle(5)}>Brew the tea, let it sit 5 min.</p>
+        <p style={handStyle(1)}>Stir everything in while it's warm.</p>
+        <p style={handStyle(3)}>Serve it {served}. Sip it slow — don't rush.</p>
       </div>
 
-      <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mt-7 leading-snug">
+      <p
+        style={{ ...handStyle(2), color: HAND_INK }}
+        className="text-4xl font-semibold mt-7 leading-snug"
+      >
         The vinegar is the whole secret. Just a splash — don't
         overdo it! ♡
       </p>
 
-      <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-right mt-6 text-neutral-700">
+      <p style={{ ...handStyle(4), color: HAND_INK }} className="text-3xl font-semibold text-right mt-6">
         — made with love, Miranda x
       </p>
     </div>
@@ -599,16 +616,16 @@ export default function TeaQuiz() {
                 className="bg-[#FFFDF5] rounded-sm px-7 py-7 mb-8 text-neutral-800 shadow-xl"
                 style={{ transform: "rotate(0.8deg)" }}
               >
-                <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mb-3">
+                <p style={{ ...handStyle(0), color: HAND_INK }} className="text-4xl font-semibold mb-3">
                   Dear {name || "friend"},
                 </p>
                 <p
-                  style={{ fontFamily: HANDWRITING }}
-                  className="text-[1.7rem] leading-[1.5] whitespace-pre-line"
+                  style={{ fontFamily: HANDWRITING, color: HAND_INK }}
+                  className="text-[1.9rem] font-semibold leading-[1.45] whitespace-pre-line"
                 >
                   {note}
                 </p>
-                <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-right mt-4 text-neutral-700">
+                <p style={{ ...handStyle(3), color: HAND_INK }} className="text-4xl font-semibold text-right mt-4">
                   — Miranda
                 </p>
               </div>

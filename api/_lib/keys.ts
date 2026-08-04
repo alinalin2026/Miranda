@@ -6,9 +6,13 @@ const NS = "miranda:go";
 const QUIZ_NS = "miranda:quiz";
 
 export const keys = {
-  // Capped log of quiz email captures, newest first.
-  quizLeads: `${QUIZ_NS}:leads`,
-  // Total quiz emails captured, all-time (the list above is capped).
+  // One record per person, keyed by lowercased email -- overwritten on
+  // every quiz completion or resend, so it always reflects current state
+  // (including whether the recipe email was sent). This is what the
+  // admin leads manager reads and writes.
+  quizLeadsByEmail: `${QUIZ_NS}:leads:byEmail`,
+  // Total quiz completions, all-time (counts repeats; a running total for
+  // the dashboard tile, not a count of unique people).
   quizLeadCount: `${QUIZ_NS}:leads:count`,
   // Real count of quiz completions per UTC day ("teas made today").
   // Incremented once per completion; the key expires after ~2 days.
