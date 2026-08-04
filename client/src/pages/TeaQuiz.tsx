@@ -2,32 +2,32 @@
  * Tea Match Quiz
  * Route: /tea-quiz
  *
- * Nine one-tap questions, one near-full-screen card each, then a result
- * screen. Questions are deliberately about the visitor's own tastes,
- * habits and preferences -- favourite tea, how they take it, how much they
- * drink -- not symptoms (energy/digestion/sleep/stress). Nothing here
- * states what any product does or treats.
+ * Flow: personal intro (grandmother story) -> 9 taste/habit questions ->
+ * "preparing your tea" spinner -> result (matched blend + email capture)
+ * -> PAYOFF screen (handwritten recipe card + the vinegar secret).
  *
- * Rendered standalone, without the site Header/Footer: the result screen
- * is attributed to "Stacey" to stay continuous with the ad creative, so
- * the Miranda branding is deliberately absent here. The rest of the site
- * (including the recipe article) is still Miranda's.
+ * Why the payoff is on-page, not just emailed: the ad promises "why the
+ * vinegar," so if someone completes the quiz and never learns it, they
+ * feel cheated and report the ad. Showing the recipe + the vinegar
+ * explanation immediately after email capture guarantees they get what
+ * they came for, with no dependency on outbound email actually sending.
  *
- * Story runs start to end: the intro is Stacey's grandmother-taught-tea
- * narrative (matches the "I pour vinegar in my tea" ad creative -- the
- * grandmother's version included vinegar too), the result frames the
- * match as "the version she'd make you," and email capture is framed as
- * Stacey sending her grandmother's recipe personally.
+ * The vinegar explanation is the "switchel" angle -- a real 1600s
+ * farmhouse drink (vinegar + honey + ginger + water). It's true, it's
+ * charming, and it explains the vinegar purely as taste/tradition. It
+ * makes NO health claim, deliberately.
  *
- * IMPORTANT: after email submit, this page shows a "check your inbox"
- * confirmation only -- there is no on-page link to the offer anymore (the
- * previous "Watch The Video" button pointing at
- * /review/all-day-slimming-tea/buy has been removed, per instruction not
- * to show it once someone has left their email). That means this funnel
- * currently has NO path to the affiliate offer at all until outbound
- * email sending is wired up -- the email is captured (POST
- * /api/quiz-lead, stored in Redis, see api/_lib/keys.ts) but nothing is
- * sent yet.
+ * Questions are about tastes/habits/preferences only (favourite tea, how
+ * they take it, how much they drink) -- never symptoms. Nothing states
+ * what any product does or treats.
+ *
+ * Rendered standalone (no site Header/Footer). Attributed to "Stacey" to
+ * stay continuous with the ad creative. Email capture posts to
+ * /api/quiz-lead (stored in Redis, see api/_lib/keys.ts); the save is
+ * best-effort and never blocks the visitor from reaching the payoff.
+ *
+ * There is intentionally NO on-page link to the affiliate offer here --
+ * the video/offer is delivered later by email once sending is wired up.
  */
 
 import { useEffect, useState } from "react";
@@ -35,9 +35,11 @@ import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Brief pause between the last answer and the result. Cutting straight
-// from a tap to the result screen reads as a jump-cut; a moment of
-// "working on it" makes the result feel like it was arrived at.
+// from a tap to the result reads as a jump-cut; a moment of "working on
+// it" makes the result feel arrived at.
 const REVEAL_DELAY_MS = 2200;
+
+const HANDWRITING = "'Caveat', cursive";
 
 type Question = {
   image: string;
@@ -129,9 +131,6 @@ function toAnswers(picked: string[]): Answers {
   };
 }
 
-// "All day" and "Both" don't slot into a sentence the way the other
-// options do ("in the all day", "served both"), so they get their own
-// phrasing rather than a bare .toLowerCase().
 function whenPhrase(when: string): string {
   return when === "All day" ? "throughout the day" : `in the ${when.toLowerCase()}`;
 }
@@ -140,11 +139,6 @@ function tempPhrase(temperature: string): string {
   return temperature === "Both" ? "hot or iced" : temperature.toLowerCase();
 }
 
-// The result is keyed off the last question (what they want from their
-// tea), with the blurb worked back around their earlier answers so it
-// reads as a genuine match rather than the same screen for everyone. Each
-// blurb describes why the blend suits their stated routine -- it doesn't
-// claim an outcome.
 const results: Record<string, { name: string; blurb: (a: Answers) => string }> = {
   Energy: {
     name: "The Morning Lift Blend",
@@ -183,6 +177,63 @@ function ProgressBar({ step }: { step: number }) {
   );
 }
 
+// Handwritten recipe card, lightly personalised to their answers. Kept
+// deliberately human: a natural crossed-out correction, a signature, a
+// slight tilt. The vinegar line is the payoff the ad promised.
+function RecipeCard({ a }: { a: Answers }) {
+  const teaWord = a.favourite === "Herbal" ? "herbal" : a.favourite.toLowerCase();
+  const served = a.temperature === "Iced" ? "over ice" : a.temperature === "Both" ? "hot or over ice" : "hot";
+
+  return (
+    <div
+      className="relative bg-[#FFFDF5] rounded-sm px-7 py-8 text-neutral-800 shadow-2xl"
+      style={{
+        transform: "rotate(-1.2deg)",
+        backgroundImage:
+          "repeating-linear-gradient(#FFFDF5, #FFFDF5 37px, #E6DEC5 38px, #FFFDF5 39px)",
+        boxShadow: "0 18px 40px -12px rgba(0,0,0,.35)",
+      }}
+    >
+      {/* tape */}
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-amber-200/70 rotate-1 shadow-sm" />
+
+      <p style={{ fontFamily: HANDWRITING }} className="text-4xl font-bold text-amber-900 text-center leading-none mb-1">
+        Nana's Morning Tea
+      </p>
+      <p style={{ fontFamily: HANDWRITING }} className="text-2xl text-neutral-600 text-center mb-6">
+        (the way she taught me)
+      </p>
+
+      <ul style={{ fontFamily: HANDWRITING }} className="text-3xl leading-[1.5] space-y-1">
+        <li>• 1 cup {teaWord} tea, brewed strong</li>
+        <li>• juice of half a lemon</li>
+        <li>• a few fresh mint leaves, torn</li>
+        <li>
+          • 1{" "}
+          <span className="line-through decoration-2 text-neutral-400">teaspon</span> teaspoon
+          honey
+        </li>
+        <li>• 1 small splash of apple cider vinegar</li>
+      </ul>
+
+      <div style={{ fontFamily: HANDWRITING }} className="text-3xl leading-[1.5] mt-6 space-y-1">
+        <p>Brew the tea, let it sit 5 min.</p>
+        <p>Stir everything in while it's warm.</p>
+        <p>Serve it {served}. Sip it slow — don't rush.</p>
+      </div>
+
+      <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mt-7 leading-snug">
+        The vinegar is the whole secret. Just a splash — don't
+        overdo it! ♡
+      </p>
+
+      <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-right mt-6 text-neutral-700">
+        — made with love, Stacey x
+      </p>
+    </div>
+  );
+}
+
 export default function TeaQuiz() {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
@@ -205,9 +256,6 @@ export default function TeaQuiz() {
     setStep((s) => s + 1);
   }
 
-  // Save is best-effort: a failed write still marks the email as
-  // submitted, since the point is the visitor experience (confirmation
-  // screen), not blocking on Redis being reachable.
   async function submitEmail(e: React.FormEvent, picked: Answers, resultName: string) {
     e.preventDefault();
     setSubmittingEmail(true);
@@ -225,9 +273,7 @@ export default function TeaQuiz() {
     }
   }
 
-  // Intro carries the same face as the ad creative and opens with the
-  // same line ("I pour vinegar in my tea"), then continues into the
-  // grandmother story -- the vinegar is hers, not a random habit.
+  // ── Intro: the personal grandmother story ──
   if (!started) {
     return (
       <div className="min-h-[100dvh] bg-[#FBF4E8] px-6 py-12">
@@ -239,35 +285,43 @@ export default function TeaQuiz() {
           />
 
           <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight mb-6 text-center">
-            My grandmother never followed diets.
+            My grandmother never followed a single diet.
           </h1>
 
           <div className="space-y-5 text-neutral-800 text-2xl leading-relaxed">
             <p>
-              She just made tea — a different version depending on how I
-              looked or felt that morning. Some days lighter. Some days
-              stronger. Sometimes with a small splash of vinegar.
+              We just called her Nana. She had a chipped enamel pot that
+              lived on the back of the stove, and most mornings there was
+              tea in it — made a little differently depending on the day.
             </p>
 
             <p>
-              When I was younger I didn't pay much attention. In my 40s, I
-              came back to her way.
+              Some mornings light and green. Some dark and strong. And now
+              and then, a small splash of apple cider vinegar that made me
+              wrinkle my nose as a girl.
             </p>
 
             <p>
-              I stopped forcing strict routines and started making tea the
-              way she taught me — according to what I actually needed that
-              day, not a plan written for someone else.
+              <em>"That's the wake-up,"</em> she'd say. She never explained
+              it past that.
             </p>
 
             <p>
-              It became the one thing I never quit. I still make it most
-              mornings.
+              I forgot about it for years — chasing every plan and rule
+              there was through my 30s. None of them stuck. Then somewhere
+              in my 40s, tired of all of it, I started making tea again. Her
+              way. Not by a rulebook — just by how I actually felt that
+              morning.
+            </p>
+
+            <p>
+              It's the one thing I never quit. I still make it most
+              mornings, in a cup that's not quite as chipped as hers was.
             </p>
 
             <p className="font-semibold text-neutral-900">
-              I can show you the version that fits you. It'll take about a
-              minute — just a few quick questions about how you drink tea.
+              Let me show you the version she'd have made for you — and
+              finally tell you what that splash of vinegar is really for.
             </p>
           </div>
 
@@ -283,6 +337,7 @@ export default function TeaQuiz() {
     );
   }
 
+  // ── Spinner ──
   if (done && !revealed) {
     return (
       <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6">
@@ -297,10 +352,68 @@ export default function TeaQuiz() {
     );
   }
 
+  // ── Result + email capture, then payoff ──
   if (done) {
     const picked = toAnswers(answers);
     const result = results[picked.goal] ?? results["All of it"];
 
+    // PAYOFF: recipe card + the vinegar secret. Shown immediately after
+    // email so the visitor always gets what the ad promised.
+    if (emailSubmitted) {
+      return (
+        <div className="min-h-[100dvh] bg-[#FBF4E8] px-6 py-12">
+          <div className="w-full max-w-md mx-auto">
+            <p className="text-amber-800 font-bold text-base uppercase tracking-widest mb-3 text-center">
+              Your recipe — {result.name}
+            </p>
+            <h1 className="text-4xl font-bold text-neutral-900 leading-tight mb-8 text-center">
+              Here it is, in my own hand.
+            </h1>
+
+            <RecipeCard a={picked} />
+
+            <div className="mt-12">
+              <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                So — why the vinegar?
+              </h2>
+              <div className="space-y-4 text-neutral-800 text-xl leading-relaxed">
+                <p>
+                  Here's the part Nana never spelled out. She grew up on a
+                  farm, and out there they drank something called a{" "}
+                  <strong>switchel</strong> — water, a little vinegar, some
+                  ginger and honey — to cool off after working in the
+                  fields. It goes back hundreds of years.
+                </p>
+                <p>
+                  She never called it health food. She just said the splash
+                  of vinegar <em>"woke the drink up."</em> And she was right:
+                  it's the brightness. That little sour edge balances the
+                  honey and the tea so the whole cup tastes cleaner and more
+                  alive.
+                </p>
+                <p>
+                  That's the whole secret. No magic — just an old farmhouse
+                  habit that happens to taste wonderful. A teaspoon is
+                  plenty. Any more and you've made a salad dressing.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 bg-white/70 border border-amber-800/20 rounded-2xl p-6 text-center">
+              <p className="text-neutral-700 text-lg leading-relaxed">
+                I've saved a copy to your inbox too — plus a little more of
+                Nana's story. Keep an eye out for it. ♡
+              </p>
+              <p style={{ fontFamily: HANDWRITING }} className="text-3xl text-amber-900 mt-3">
+                — Stacey
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Result + email gate
     return (
       <div className="min-h-[100dvh] bg-[#FBF4E8] flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center">
@@ -327,48 +440,39 @@ export default function TeaQuiz() {
           </p>
 
           <p className="text-neutral-800 text-xl leading-relaxed mb-8">
-            This is close to the pattern she had — a version built around how
-            you actually feel, not a strict routine.
+            I've written out the full recipe by hand — measurements and all
+            — plus the real reason for the splash of vinegar.
           </p>
 
-          {!emailSubmitted ? (
-            <form onSubmit={(e) => submitEmail(e, picked, result.name)} className="space-y-4">
-              <p className="text-black text-xl leading-relaxed mb-2 font-bold">
-                Enter your email to get the recipe →
-              </p>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email"
-                className="w-full text-center text-2xl px-6 py-6 rounded-2xl border-2 border-neutral-800 bg-white text-neutral-900 shadow-md focus:outline-none focus:border-amber-800 focus:shadow-lg transition-all placeholder:text-neutral-400"
-              />
-              <Button
-                type="submit"
-                size="lg"
-                disabled={submittingEmail}
-                className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950 disabled:opacity-60"
-              >
-                <Mail className="!w-7 !h-7 mr-1" />
-                {submittingEmail ? "Sending…" : "Send Me Grandma's Recipe"}
-              </Button>
-              <p className="text-sm text-neutral-500">Just the recipe. No spam.</p>
-            </form>
-          ) : (
-            <div className="bg-white border-2 border-neutral-800 rounded-2xl p-8 shadow-lg">
-              <h2 className="text-3xl font-bold text-neutral-900 mb-3">Thank you.</h2>
-              <p className="text-neutral-800 text-xl leading-relaxed">
-                Check your inbox — I'm sending over my grandmother's recipe,
-                along with the rest of the story.
-              </p>
-            </div>
-          )}
+          <form onSubmit={(e) => submitEmail(e, picked, result.name)} className="space-y-4">
+            <p className="text-black text-xl leading-relaxed mb-2 font-bold">
+              Enter your email to see the recipe →
+            </p>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Your email"
+              className="w-full text-center text-2xl px-6 py-6 rounded-2xl border-2 border-neutral-800 bg-white text-neutral-900 shadow-md focus:outline-none focus:border-amber-800 focus:shadow-lg transition-all placeholder:text-neutral-400"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              disabled={submittingEmail}
+              className="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-2xl px-8 py-9 rounded-2xl shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border-2 border-amber-950 disabled:opacity-60"
+            >
+              <Mail className="!w-7 !h-7 mr-1" />
+              {submittingEmail ? "Getting it ready…" : "Show Me The Recipe"}
+            </Button>
+            <p className="text-sm text-neutral-500">Just the recipe. No spam.</p>
+          </form>
         </div>
       </div>
     );
   }
 
+  // ── Question card ──
   const q = questions[step];
 
   return (
